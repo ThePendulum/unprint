@@ -1,0 +1,24 @@
+{
+  "name": "unprint",
+  "version": "0.0.0",
+  "description": "Simplify common web scraping tasks while staying in control of the data.",
+  "main": "src/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ThePendulum/unprint.git"
+  },
+  "keywords": [
+    "scraping",
+    "scraper",
+    "web"
+  ],
+  "author": "ThePendulum",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ThePendulum/unprint/issues"
+  },
+  "homepage": "https://github.com/ThePendulum/unprint#readme"
+}
