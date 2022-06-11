@@ -1,0 +1,20 @@
+{
+    "extends": "airbnb-base",
+    "parserOptions": {
+        "sourceType": "script",
+		"ecmaVersion": 2020
+    },
+    "rules": {
+        "strict": 0,
+        "indent": "off",
+        "no-tabs": "off",
+        "no-unused-vars": ["error", {"argsIgnorePattern": "^_"}],
+        "no-console": 0,
+        "no-underscore-dangle": 0,
+        "prefer-destructuring": "off",
+        "template-curly-spacing": "off",
+        "object-curly-newline": "off",
+		"default-param-last": "off",
+        "max-len": [2, {"code": 300, "tabWidth": 4, "ignoreUrls": true}]
+    }
+}
