@@ -2,10 +2,9 @@
 
 const path = require('path');
 const express = require('express');
-
 const unprint = require('unprint');
-const data = require('./data.json');
 
+const data = require('./data.json');
 const port = process.env.PORT || 3101;
 
 async function initTest() {

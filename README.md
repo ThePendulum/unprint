@@ -12,19 +12,21 @@ For optimal flexibility, unprint query methods can be used with or without initi
 
 `unprint.query.element(element, 'h1#title')` // HTMLHeadingElement
 
-Both `http.get()` and `http.init()` return its `query` methods pre-initialized, removing the element argument in favor of the element retrieved or received. Initialized query methods therefore will *not* accept a custom element, usually expecting the selector as the first argument instead.
+Both `unprint.get()` and `unprint.init()` return its `query` methods pre-initialized, removing the element argument in favor of the element retrieved or received. Initialized query methods therefore will *not* accept a custom element, usually expecting the selector as the first argument instead.
 
 ```javascript
 const result = await unprint.get('http://localhot:3101/html');
-result.context.query.element('h1#title'); // HTMLHeadingElement
+const { query } = result.context;
+
+query.element('h1#title'); // HTMLHeadingElement
 ```
 
 ```javascript
 const result = await fetch('http://localhot:3101/html');
 const body = await res.text();
-const context = await unprint.init(body);
+const { query } = await unprint.init(body);
 
-context.query.element('h1#title'); // HTMLHeadingElement
+query.element('h1#title'); // HTMLHeadingElement
 ```
 
 **From here on, the query methods will be described in their initialized form.** The API for the *uninitialized* methods is identical, except for the element passed as the first argument
@@ -38,7 +40,7 @@ The selector can be a CSS selector, an XPath selector starting with `//`, or an 
 Returns the element node directly.
 
 #### Query a date
-`query.date([selector], format, [options])`
+`query.date(selector, format, [options])`
 
 Arguments
 * `format` (string, array): The input format as a string or array of strings described by the [Moment.js docs](https://momentjs.com/docs/#/displaying/format/).

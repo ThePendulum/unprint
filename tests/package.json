@@ -10,6 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.1",
-    "unprint": "^0.0.0"
+    "unprint": "^0.2.1"
   }
 }
