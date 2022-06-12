@@ -21,6 +21,8 @@ function handleError(error, code) {
 	if (settings.throwErrors) {
 		throw Object.assign(error, { code });
 	}
+
+	return null;
 }
 
 virtualConsole.on('error', (message) => handleError(message, 'JSDOM'));
@@ -38,22 +40,66 @@ function trim(string) {
 	return string;
 }
 
-function queryElement(element, selector, _customOptions) {
-	const target = element.querySelector(selector);
+function iterateXpathResult(iterator, results = []) {
+	const element = iterator.iterateNext();
 
-	return target;
+	if (element) {
+		return iterateXpathResult(iterator, results.concat(element));
+	}
+
+	return results;
+}
+
+function getElements(element, selector, firstOnly = false) {
+	if (!selector) {
+		return element;
+	}
+
+	if (/^\/\//.test(selector)) {
+		// XPath selector
+		const iterator = globalWindow.document.evaluate(selector, element, null, globalWindow.XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+
+		if (firstOnly) {
+			return iterator.iterateNext();
+		}
+
+		return iterateXpathResult(iterator);
+	}
+
+	if (firstOnly) {
+		return element.querySelector(selector);
+	}
+
+	return Array.from(element.querySelectorAll(selector));
+}
+
+function queryElement(element, selectors, _customOptions) {
+	if (!selectors && element.nodeName === '#document') {
+		return null;
+	}
+
+	const target = [].concat(selectors).reduce((acc, selector) => acc || getElements(element, selector, true), null);
+
+	return target || null;
+}
+
+function queryElements(element, selectors, _customOptions) {
+	if (!selectors) {
+		return element;
+	}
+
+	const targets = [].concat(selectors).reduce((acc, selector) => acc || getElements(element, selector, false), null);
+
+	return targets || [];
 }
 
 function queryExistence(element, selector, customOptions) {
 	return !!queryElement(element, selector, customOptions);
 }
 
-function queryContent(element, selector, customOptions) {
-	const options = { ...defaultOptions, ...customOptions };
-	const target = queryElement(element, selector, options);
-
+function extractContent(element, options) {
 	if (options.attribute) {
-		const attribute = target[options.attribute] || element.getAttribute(options.attribute);
+		const attribute = element[options.attribute] || element.getAttribute(options.attribute);
 
 		if (attribute && options.trim) {
 			return trim(attribute);
@@ -63,14 +109,35 @@ function queryContent(element, selector, customOptions) {
 	}
 
 	if (options.trim) {
-		return trim(target.textContent);
+		return trim(element.textContent);
 	}
 
-	return target.textContent;
+	return element.textContent;
+}
+
+function queryContent(element, selector, customOptions) {
+	const options = { ...defaultOptions, ...customOptions };
+	const target = queryElement(element, selector, options);
+
+	return extractContent(target, options);
+}
+
+function queryContents(element, selector, customOptions) {
+	const options = { ...defaultOptions, ...customOptions };
+	const targets = queryElements(element, selector, options);
+
+	return targets.map((target) => extractContent(target, options));
 }
 
 function queryAttribute(element, selector, attribute, customOptions) {
 	return queryContent(element, selector, {
+		...customOptions,
+		attribute,
+	});
+}
+
+function queryAttributes(element, selector, attribute, customOptions) {
+	return queryContents(element, selector, {
 		...customOptions,
 		attribute,
 	});
@@ -86,23 +153,43 @@ function queryHtml(element, selector, customOptions) {
 	return null;
 }
 
-function queryJson(element, selector, customOptions) {
-	const target = queryElement(element, selector, customOptions);
+function queryHtmls(element, selector, customOptions) {
+	const targets = queryElements(element, selector, customOptions);
 
-	if (!target) {
+	return targets.map((target) => trim(target.innerHTML));
+}
+
+function extractJson(element) {
+	if (!element) {
 		return null;
 	}
 
 	try {
-		return JSON.parse(target.innerHTML);
+		return JSON.parse(element.innerHTML);
 	} catch (error) {
 		return null;
 	}
 }
 
-function extractDate(dateString, format = ['YYYY-MM-DD', 'MM/DD/YYYY'], customOptions) {
+function queryJson(element, selector, customOptions) {
+	const target = queryElement(element, selector, customOptions);
+
+	return extractJson(target);
+}
+
+function queryJsons(element, selector, customOptions) {
+	const targets = queryElements(element, selector, customOptions);
+
+	return targets.map((target) => extractJson(target)).filter(Boolean);
+}
+
+function extractDate(dateString, format, customOptions) {
 	if (!dateString) {
 		return null;
+	}
+
+	if (!format) {
+		return handleError(new Error('Missing required date format parameter'), 'NO_DATE_FORMAT');
 	}
 
 	const options = {
@@ -130,22 +217,34 @@ function extractDate(dateString, format = ['YYYY-MM-DD', 'MM/DD/YYYY'], customOp
 function queryDate(element, selector, format, customOptions) {
 	const dateString = queryContent(element, selector, customOptions);
 
-	if (!dateString) {
-		return null;
-	}
-
 	return extractDate(dateString, format, customOptions);
+}
+
+function queryDates(element, selector, format, customOptions) {
+	const dateStrings = queryContents(element, selector, customOptions);
+
+	return dateStrings.map((dateString) => extractDate(dateString, format, customOptions));
 }
 
 const queryFns = {
 	element: queryElement,
+	elements: queryElements,
+	el: queryElement,
+	els: queryElements,
+	all: queryElements,
 	content: queryContent,
+	contents: queryContents,
 	attribute: queryAttribute,
+	attributes: queryAttributes,
 	attr: queryAttribute,
+	attrs: queryAttributes,
 	exists: queryExistence,
 	html: queryHtml,
+	htmls: queryHtmls,
 	json: queryJson,
+	jsons: queryJsons,
 	date: queryDate,
+	dates: queryDates,
 	extractDate,
 };
 
@@ -269,7 +368,9 @@ module.exports = {
 	get,
 	post,
 	request,
+	initialize: init,
+	initializeAll: initAll,
 	init,
 	initAll,
-	...queryFns,
+	query: queryFns,
 };

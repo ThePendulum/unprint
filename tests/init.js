@@ -13,9 +13,10 @@ async function initTest() {
 	// const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
 	// const errorRes = await unprint.get(`http://127.0.0.1:${port}/error/404`);
 
-	console.log('title', res.context.query.content('#title'));
+	console.log('title', res.context.query.element('#title'), res.context.query.content('//*[contains(text(), "Test")]'));
 	console.log('date', res.context.query.date('#date', 'DD-MM-YYYY HH:mm'));
-	console.log('data', res.context.query.json('#json', 'DD-MM-YYYY HH:mm'));
+	console.log('data', res.context.query.json('#json'));
+	console.log('items', res.context.query.contents('.item'));
 }
 
 async function initServer() {
