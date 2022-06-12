@@ -50,7 +50,7 @@ Options
 Returns a Date object.
 
 #### Querying multiple elements
-Most methods have
+Most methods can be used in plural, returning an array of results, i.e. `query.elements()`, `query.dates()`.
 
 ### HTTP request
 `unprint.get(url, [options])`
