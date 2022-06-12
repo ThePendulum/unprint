@@ -3,12 +3,14 @@
 const path = require('path');
 const express = require('express');
 
-const unprint = require('../src/app');
+const unprint = require('unprint');
 const data = require('./data.json');
 
 const port = process.env.PORT || 3101;
 
 async function initTest() {
+	console.log(unprint);
+
 	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body' });
 	// const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
 	// const errorRes = await unprint.get(`http://127.0.0.1:${port}/error/404`);

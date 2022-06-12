@@ -31,8 +31,5 @@
     "jsdom": "^17.0.0",
     "moment-timezone": "^0.5.34",
     "tunnel": "0.0.6"
-  },
-  "devDependencies": {
-    "express": "^4.18.1"
   }
 }
