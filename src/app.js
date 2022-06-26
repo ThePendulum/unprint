@@ -50,14 +50,14 @@ function iterateXpathResult(iterator, results = []) {
 	return results;
 }
 
-function getElements(element, selector, firstOnly = false) {
+function getElements(context, selector, firstOnly = false) {
 	if (!selector) {
-		return element;
+		return context.element;
 	}
 
 	if (/^\/\//.test(selector)) {
 		// XPath selector
-		const iterator = globalWindow.document.evaluate(selector, element, null, globalWindow.XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+		const iterator = globalWindow.document.evaluate(selector, context.element, null, globalWindow.XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
 
 		if (firstOnly) {
 			return iterator.iterateNext();
@@ -67,39 +67,66 @@ function getElements(element, selector, firstOnly = false) {
 	}
 
 	if (firstOnly) {
-		return element.querySelector(selector);
+		return context.element.querySelector(selector);
 	}
 
-	return Array.from(element.querySelectorAll(selector));
+	return Array.from(context.element.querySelectorAll(selector));
 }
 
-function queryElement(element, selectors, _customOptions) {
-	if (!selectors && element.nodeName === '#document') {
+function queryElement(context, selectors, _customOptions) {
+	if (!selectors && context.element.nodeName === '#document') {
 		return null;
 	}
 
-	const target = [].concat(selectors).reduce((acc, selector) => acc || getElements(element, selector, true), null);
+	const target = [].concat(selectors).reduce((acc, selector) => acc || getElements(context, selector, true), null);
 
 	return target || null;
 }
 
-function queryElements(element, selectors, _customOptions) {
+function queryElements(context, selectors, _customOptions) {
 	if (!selectors) {
-		return element;
+		return context.element;
 	}
 
-	const targets = [].concat(selectors).reduce((acc, selector) => acc || getElements(element, selector, false), null);
+	const targets = [].concat(selectors).reduce((acc, selector) => acc || getElements(context, selector, false), null);
 
 	return targets || [];
 }
 
-function queryExistence(element, selector, customOptions) {
-	return !!queryElement(element, selector, customOptions);
+function queryExistence(context, selector, customOptions) {
+	return !!queryElement(context, selector, customOptions);
+}
+
+function queryCount(context, selector, customOptions) {
+	return queryElements(context, selector, customOptions)?.length || 0;
+}
+
+function getAttributeKey(options) {
+	if (!options) {
+		return null;
+	}
+
+	if (Object.hasOwn(options, 'attr')) {
+		return options.attr;
+	}
+
+	if (Object.hasOwn(options, 'attribute')) {
+		return options.attribute;
+	}
+
+	return null;
 }
 
 function extractContent(element, options) {
-	if (options.attribute) {
-		const attribute = element[options.attribute] || element.getAttribute(options.attribute);
+	if (!element) {
+		return null;
+	}
+
+	const attributeKey = getAttributeKey(options);
+
+	if (attributeKey) {
+		// handle attribute extraction in content method so all methods can easily optionally query a specific attribute
+		const attribute = element[attributeKey] || element.getAttribute(attributeKey);
 
 		if (attribute && options.trim) {
 			return trim(attribute);
@@ -115,36 +142,36 @@ function extractContent(element, options) {
 	return element.textContent;
 }
 
-function queryContent(element, selector, customOptions) {
-	const options = { ...defaultOptions, ...customOptions };
-	const target = queryElement(element, selector, options);
+function queryContent(context, selector, customOptions) {
+	const options = { ...context.options, ...customOptions };
+	const target = queryElement(context, selector, options);
 
 	return extractContent(target, options);
 }
 
-function queryContents(element, selector, customOptions) {
-	const options = { ...defaultOptions, ...customOptions };
-	const targets = queryElements(element, selector, options);
+function queryContents(context, selector, customOptions) {
+	const options = { ...context.options, ...customOptions };
+	const targets = queryElements(context, selector, options);
 
-	return targets.map((target) => extractContent(target, options));
+	return targets.map((target) => extractContent(target, options)).filter(Boolean);
 }
 
-function queryAttribute(element, selector, attribute, customOptions) {
-	return queryContent(element, selector, {
+function queryAttribute(context, selector, attribute, customOptions) {
+	return queryContent(context, selector, {
 		...customOptions,
 		attribute,
 	});
 }
 
-function queryAttributes(element, selector, attribute, customOptions) {
-	return queryContents(element, selector, {
+function queryAttributes(context, selector, attribute, customOptions) {
+	return queryContents(context, selector, {
 		...customOptions,
 		attribute,
 	});
 }
 
-function queryHtml(element, selector, customOptions) {
-	const target = queryElement(element, selector, customOptions);
+function queryHtml(context, selector, customOptions) {
+	const target = queryElement(context, selector, customOptions);
 
 	if (target) {
 		return trim(target.innerHTML);
@@ -153,10 +180,112 @@ function queryHtml(element, selector, customOptions) {
 	return null;
 }
 
-function queryHtmls(element, selector, customOptions) {
-	const targets = queryElements(element, selector, customOptions);
+function queryHtmls(context, selector, customOptions) {
+	const targets = queryElements(context, selector, customOptions);
 
 	return targets.map((target) => trim(target.innerHTML));
+}
+
+function prefixUrl(urlPath, originUrl, customOptions) {
+	if (!urlPath) {
+		return null;
+	}
+
+	if (!originUrl) {
+		return urlPath;
+	}
+
+	const options = {
+		protocol: 'https',
+		...customOptions,
+	};
+
+	const { origin, protocol } = new URL(originUrl);
+
+	if (/^http/.test(urlPath)) {
+		// this is already a complete URL
+		return urlPath;
+	}
+
+	if (options.protocol && /^\/\//.test(urlPath)) {
+		return `${options.protocol.replace(/:$/, '')}:${urlPath}`; // allow protocol to be defined either as 'https' or 'https:'
+	}
+
+	if (protocol && /^\/\//.test(urlPath)) {
+		return `${protocol}${urlPath}`;
+	}
+
+	if (/^\//.test(urlPath)) {
+		return `${origin}${urlPath}`;
+	}
+
+	if (/^\.\//.test(urlPath)) {
+		return `${originUrl.replace(/\/+$/, '')}${urlPath.slice(1)}`;
+	}
+
+	return `${origin}/${urlPath}`;
+}
+
+function queryUrl(context, selector = 'a', customOptions) {
+	const options = {
+		...context.options,
+		attribute: 'href',
+		...customOptions,
+	};
+
+	const url = queryContent(context, selector, options);
+	const curatedUrl = prefixUrl(url, options.origin, customOptions);
+
+	return curatedUrl;
+}
+
+function getImageUrl(context, selector, options) {
+	const attributeKey = getAttributeKey(options);
+
+	if (attributeKey) {
+		return queryAttribute(context, selector, attributeKey, options);
+	}
+
+	return queryAttribute(context, selector, 'data-src', options)
+		|| queryAttribute(context, selector, 'src', options);
+}
+
+function getImageUrls(context, selector, options) {
+	const attributeKey = getAttributeKey(options);
+
+	if (attributeKey) {
+		return queryAttributes(context, selector, attributeKey, options);
+	}
+
+	const dataLinks = queryAttributes(context, selector, 'data-src', options);
+
+	if (dataLinks.lenght > 0) {
+		return dataLinks;
+	}
+
+	return queryAttributes(context, selector, 'src', options);
+}
+
+function queryImage(context, selector = 'img', customOptions) {
+	const options = {
+		...context.options,
+		...customOptions,
+	};
+
+	const imageUrl = getImageUrl(context, selector, options);
+
+	return prefixUrl(imageUrl, options.origin, options);
+}
+
+function queryImages(context, selector = 'img', customOptions) {
+	const options = {
+		...context.options,
+		...customOptions,
+	};
+
+	const imageUrls = getImageUrls(context, selector, options);
+
+	return imageUrls.map((imageUrl) => prefixUrl(imageUrl, options.origin, options));
 }
 
 function extractJson(element) {
@@ -171,14 +300,14 @@ function extractJson(element) {
 	}
 }
 
-function queryJson(element, selector, customOptions) {
-	const target = queryElement(element, selector, customOptions);
+function queryJson(context, selector, customOptions) {
+	const target = queryElement(context, selector, customOptions);
 
 	return extractJson(target);
 }
 
-function queryJsons(element, selector, customOptions) {
-	const targets = queryElements(element, selector, customOptions);
+function queryJsons(context, selector, customOptions) {
+	const targets = queryElements(context, selector, customOptions);
 
 	return targets.map((target) => extractJson(target)).filter(Boolean);
 }
@@ -193,7 +322,6 @@ function extractDate(dateString, format, customOptions) {
 	}
 
 	const options = {
-		...defaultOptions,
 		match: /((\d{1,4}[/-]\d{1,2}[/-]\d{1,4})|(\w+\s+\d{1,2},?\s+\d{4}))(\s+\d{1,2}:\d{2}(:\d{2})?)?/g, // matches any of 01-01-1970, 1970-01-01 and January 1, 1970 with optional 00:00[:00] time
 		timezone: 'UTC',
 		...customOptions,
@@ -214,16 +342,22 @@ function extractDate(dateString, format, customOptions) {
 	return null;
 }
 
-function queryDate(element, selector, format, customOptions) {
-	const dateString = queryContent(element, selector, customOptions);
+function queryDate(context, selector, format, customOptions) {
+	const dateString = queryContent(context, selector, customOptions);
 
-	return extractDate(dateString, format, customOptions);
+	return extractDate(dateString, format, {
+		...context.options,
+		...customOptions,
+	});
 }
 
-function queryDates(element, selector, format, customOptions) {
-	const dateStrings = queryContents(element, selector, customOptions);
+function queryDates(context, selector, format, customOptions) {
+	const dateStrings = queryContents(context, selector, customOptions);
 
-	return dateStrings.map((dateString) => extractDate(dateString, format, customOptions));
+	return dateStrings.map((dateString) => extractDate(dateString, format, {
+		...context.options,
+		customOptions,
+	}));
 }
 
 const queryFns = {
@@ -239,53 +373,94 @@ const queryFns = {
 	attr: queryAttribute,
 	attrs: queryAttributes,
 	exists: queryExistence,
+	count: queryCount,
 	html: queryHtml,
 	htmls: queryHtmls,
+	image: queryImage,
+	images: queryImages,
+	img: queryImage,
+	imgs: queryImages,
 	json: queryJson,
 	jsons: queryJsons,
 	date: queryDate,
 	dates: queryDates,
-	extractDate,
+	url: queryUrl,
 };
 
-function initFns(context, fns) {
-	return Object.fromEntries(Object.entries(fns).map(([key, fn]) => [key, (...args) => fn(context, ...args)]));
+function isDomObject(element) {
+	if (!element) {
+		return false;
+	}
+
+	return typeof element.nodeType !== 'undefined';
 }
 
-function init(context, selector, options) {
-	if (!context) {
+function initQueryFns(fns, context) {
+	if (context) {
+		return Object.fromEntries(Object.entries(fns).map(([key, fn]) => [key, (...args) => fn(context, ...args)]));
+	}
+
+	// context is passed directly to query method
+	return Object.fromEntries(Object.entries(fns).map(([key, fn]) => [key, (...args) => {
+		// first argument is already an unprint context. this seems like a convoluted approach, but there is little reason not to allow it
+		if (args[0]?.isUnprint) {
+			return fn(...args);
+		}
+
+		// most common usage is to pass an element directly, convert to context
+		if (isDomObject(args[0])) {
+			const element = args[0];
+
+			return fn({
+				element,
+				html: element.outerHTML || element.body?.outerHTML,
+				isUnprint: true,
+			}, ...args.slice(1));
+		}
+
+		return handleError(new Error('Context is not provided or initialized'), 'INVALID_CONTEXT');
+	}]));
+}
+
+function init(elementOrHtml, selector, options) {
+	if (!elementOrHtml) {
 		return null;
 	}
 
-	if (typeof context === 'string') {
+	if (typeof elementOrHtml === 'string') {
 		// the context should be raw HTML
-		const { window } = new JSDOM(context, { virtualConsole, ...options.parser });
+		const { window } = new JSDOM(elementOrHtml, { virtualConsole, ...options.parser });
 
 		return init(window.document, selector, { ...options, window });
 	}
 
-	if (!context.querySelector) {
+	if (!isDomObject(elementOrHtml)) {
 		// the context is not a valid
-		return null;
+		return handleError(new Error('Init context is not a DOM element, HTML or an array'), 'INVALID_CONTEXT');
 	}
 
 	const element = selector
-		? context.querySelector(selector)
-		: context;
+		? elementOrHtml.querySelector(selector)
+		: elementOrHtml;
 
 	if (!element) {
 		return null;
 	}
 
-	return {
+	const context = {
 		element,
-		html: element.outerHTML || element.body.outerHTML,
+		html: element.outerHTML || element.body?.outerHTML,
 		...(options.window && {
 			window: options.window,
 			document: options.window.document,
 		}),
-		query: initFns(context, queryFns),
+		options,
+		isUnprint: true,
 	};
+
+	context.query = initQueryFns(queryFns, context);
+
+	return context;
 }
 
 function initAll(context, selector, options) {
@@ -301,24 +476,26 @@ function initAll(context, selector, options) {
 	}
 
 	if (!(context instanceof globalWindow.HTMLElement)) {
-		handleError(new Error('Init context is not a DOM element, HTML or an array'), 'INVALID_CONTEXT');
+		// the context is not a valid
+		return handleError(new Error('Init context is not a DOM element, HTML or an array'), 'INVALID_CONTEXT');
 	}
 
 	return Array.from(context.querySelectorAll(options.select))
 		.map((element) => init(element, selector, options));
 }
 
-async function request(url, data, customOptions = {}, method = 'GET') {
+async function request(url, body, customOptions = {}, method = 'GET') {
 	const options = {
 		timeout: 1000,
 		extract: true,
+		url,
 		...customOptions,
 	};
 
 	const res = await axios({
 		url,
 		method,
-		data,
+		data: body,
 		validateStatus: null,
 		timeout: options.timeout,
 		signal: options.abortSignal,
@@ -331,28 +508,37 @@ async function request(url, data, customOptions = {}, method = 'GET') {
 		return res.status;
 	}
 
+	const base = {
+		ok: true,
+		status: res.status,
+		statusText: res.statusText,
+		response: res,
+		res,
+	};
+
 	if (res.headers['content-type'].includes('application/json') && typeof res.data === 'object') {
 		return {
-			data,
-			ok: true,
-			status: res.status,
-			statusText: res.statusText,
-			response: res,
-			res,
+			...base,
+			data: res.data,
 		};
 	}
 
+	if (!options.extract) {
+		return base;
+	}
+
+	const contextOptions = {
+		...defaultOptions,
+		origin: url,
+	};
+
 	const context = options.selectAll
-		? initAll(res.data, options.selectAll, options)
-		: init(res.data, options.select, options);
+		? initAll(res.data, options.selectAll, contextOptions)
+		: init(res.data, options.select, contextOptions);
 
 	return {
+		...base,
 		context,
-		html: res.data,
-		ok: true,
-		status: res.status,
-		response: res,
-		res,
 	};
 }
 
@@ -372,5 +558,6 @@ module.exports = {
 	initializeAll: initAll,
 	init,
 	initAll,
-	query: queryFns,
+	extractDate,
+	query: initQueryFns(queryFns),
 };

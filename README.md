@@ -55,8 +55,8 @@ Returns a Date object.
 Most methods can be used in plural, returning an array of results, i.e. `query.elements()`, `query.dates()`.
 
 ### HTTP request
-`unprint.get(url, [options])`
-`unprint.post(url, body, [options])`
+* `unprint.get(url, [options])`
+* `unprint.post(url, body, [options])`
 
 Options
 * `select`: Pre-query and initialize a specific element on the page
