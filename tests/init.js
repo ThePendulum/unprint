@@ -12,7 +12,8 @@ const port = process.env.PORT || 3101;
 async function initTest() {
 	unprint.options({ headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36' } });
 
-	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body' });
+	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { selectAll: 'body' });
+
 	// const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
 	// const errorRes = await unprint.get(`http://127.0.0.1:${port}/error/404`);
 

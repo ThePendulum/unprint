@@ -74,7 +74,12 @@ Options
 Returns
 ```javascript
 {
-	query,				// (object)		unprint querying methods
+	context: {				// using select or no option
+		query,				// (object)		unprint querying methods
+	},
+	context: [{				// using selectAll
+		query,
+	}],
 	html,				// (string)		HTML body
 	data,				// (object)		parsed JSON response
 	status,				// (number)		HTTP status code

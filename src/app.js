@@ -508,7 +508,7 @@ function initAll(context, selector, options) {
 		return initAll(window.document, selector, { ...options, window });
 	}
 
-	if (!(context instanceof globalWindow.HTMLElement)) {
+	if (!isDomObject(context)) {
 		// the context is not a valid
 		return handleError(new Error('Init context is not a DOM element, HTML or an array'), 'INVALID_CONTEXT');
 	}
