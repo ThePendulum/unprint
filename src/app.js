@@ -524,8 +524,6 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		url,
 	}, globalOptions, customOptions]);
 
-	console.log('options', options, globalOptions);
-
 	const res = await axios({
 		url,
 		method,
