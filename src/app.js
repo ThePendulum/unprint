@@ -3,6 +3,7 @@
 const { JSDOM, VirtualConsole } = require('jsdom');
 const axios = require('axios').default;
 const moment = require('moment-timezone');
+const merge = require('deepmerge');
 
 const settings = {
 	throwErrors: false,
@@ -31,6 +32,12 @@ virtualConsole.on('jsdomError', (message) => handleError(message, 'JSDOM'));
 const defaultOptions = {
 	trim: true,
 };
+
+let globalOptions = {};
+
+function configure(newOptions) {
+	globalOptions = newOptions;
+}
 
 function trim(string) {
 	if (typeof string === 'string') {
@@ -288,6 +295,30 @@ function queryImages(context, selector = 'img', customOptions) {
 	return imageUrls.map((imageUrl) => prefixUrl(imageUrl, options.origin, options));
 }
 
+function queryVideo(context, selector = 'source', customOptions) {
+	const options = {
+		...context.options,
+		attribute: 'src',
+		...customOptions,
+	};
+
+	const videoUrl = queryContent(context, selector, options);
+
+	return prefixUrl(videoUrl, options.origin, options);
+}
+
+function queryVideos(context, selector = 'source', customOptions) {
+	const options = {
+		...context.options,
+		attribute: 'src',
+		...customOptions,
+	};
+
+	const videoUrls = queryContents(context, selector, options);
+
+	return videoUrls.map((videoUrl) => prefixUrl(videoUrl, options.origin, options));
+}
+
 function extractJson(element) {
 	if (!element) {
 		return null;
@@ -385,6 +416,8 @@ const queryFns = {
 	date: queryDate,
 	dates: queryDates,
 	url: queryUrl,
+	video: queryVideo,
+	videos: queryVideos,
 };
 
 function isDomObject(element) {
@@ -485,12 +518,13 @@ function initAll(context, selector, options) {
 }
 
 async function request(url, body, customOptions = {}, method = 'GET') {
-	const options = {
+	const options = merge.all([{
 		timeout: 1000,
 		extract: true,
 		url,
-		...customOptions,
-	};
+	}, globalOptions, customOptions]);
+
+	console.log('options', options, globalOptions);
 
 	const res = await axios({
 		url,
@@ -551,6 +585,7 @@ async function post(url, body, options) {
 }
 
 module.exports = {
+	configure,
 	get,
 	post,
 	request,
@@ -559,5 +594,6 @@ module.exports = {
 	init,
 	initAll,
 	extractDate,
+	options: configure,
 	query: initQueryFns(queryFns),
 };

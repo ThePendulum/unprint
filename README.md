@@ -7,6 +7,15 @@ unprint is a web scraping utility built around JSDOM, providing convenience meth
 ## Usage
 `const unprint = require('unprint');`
 
+### Global options
+```
+unprint.options({
+	headers: {
+		'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+	},
+})
+```
+
 ### Querying
 For optimal flexibility, unprint query methods can be used with or without initialization. If you already have access to DOM elements using another library or unprint instance, you can query it by using the uninitialized `query` methods provided directly from the library, and passing the element as the first argument, as such:
 
