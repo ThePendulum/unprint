@@ -513,8 +513,8 @@ function initAll(context, selector, options) {
 		return handleError(new Error('Init context is not a DOM element, HTML or an array'), 'INVALID_CONTEXT');
 	}
 
-	return Array.from(context.querySelectorAll(options.select))
-		.map((element) => init(element, selector, options));
+	return Array.from(context.querySelectorAll(selector))
+		.map((element) => init(element, null, options));
 }
 
 async function request(url, body, customOptions = {}, method = 'GET') {
