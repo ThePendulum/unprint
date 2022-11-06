@@ -295,6 +295,50 @@ function queryImages(context, selector = 'img', customOptions) {
 	return imageUrls.map((imageUrl) => prefixUrl(imageUrl, options.origin, options));
 }
 
+function querySourceSet(context, selector, attr = 'srcset', customOptions = {}) {
+	const srcset = queryAttribute(context, selector, attr, customOptions);
+
+	if (!srcset) {
+		return null;
+	}
+
+	const sources = srcset
+		.split(/\s*,\s*/)
+		.map((source) => {
+			const [link, descriptor] = source.split(' ');
+
+			if (link) {
+				return {
+					descriptor: descriptor || 'fallback',
+					url: prefixUrl(link, customOptions.origin, customOptions.protocol),
+				};
+			}
+
+			return null;
+		})
+		.filter(Boolean)
+		.sort((sourceA, sourceB) => {
+			if (sourceB.descriptor === 'fallback' || parseInt(sourceA.descriptor, 10) > parseInt(sourceB.descriptor, 10)) {
+				return -1;
+			}
+
+			if (parseInt(sourceA.descriptor, 10) < parseInt(sourceB.descriptor, 10)) {
+				return 1;
+			}
+
+			return 0;
+		});
+
+	if (customOptions.includeDescriptor) {
+		return sources.map((source) => ({
+			descriptor: source.descriptor,
+			url: prefixUrl(source.url),
+		}));
+	}
+
+	return sources.map((source) => prefixUrl(source.url));
+}
+
 function queryVideo(context, selector = 'source', customOptions) {
 	const options = {
 		...context.options,
@@ -415,6 +459,8 @@ const queryFns = {
 	jsons: queryJsons,
 	date: queryDate,
 	dates: queryDates,
+	sourceSet: querySourceSet,
+	srcSet: querySourceSet,
 	url: queryUrl,
 	video: queryVideo,
 	videos: queryVideos,

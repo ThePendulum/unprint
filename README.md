@@ -43,10 +43,72 @@ query.element('h1#title'); // HTMLHeadingElement
 #### Selector
 The selector can be a CSS selector, an XPath selector starting with `//`, or an array of either or both acting as fallbacks. If the selector is falsy, the input element will be used.
 
+#### Querying multiple elements
+Most methods can be used in plural, returning an array of results, i.e. `query.elements()`, `query.dates()`.
+
 #### Query an element
 * `query.element([selector], [options])`
 
 Returns the element node directly.
+
+#### Query an attribute
+`query.attribute(selector, attribute, [options])` or `query.attr()`
+
+Return the contents of an attribute. Alias for `query.element([selector], { attribute: [attribute] })`.
+
+#### Query existence
+`query.exists(selector, [options])`
+
+Return the presence of an element as a boolean.
+
+#### Query count
+`query.count(selector, [options])`
+
+Return the number of elements that match the selector.
+
+#### Query the content
+`query.content([selector], [options])`
+
+Return the text contents of an element (`.textContent`).
+
+#### Query the HTML
+`query.content([selector], [options])`
+
+Return the HTML contents of an element (`.innerHTML`).
+
+#### Query a URL
+`query.url([selector], [options])`
+
+Options
+* `origin`: The hostname to prefix when it is not included in the URL (`/path`).
+* `protocol`: The protocol to use when it is not included in the URL (`:www.example.com`, default `http`).
+
+Returns the `href` from an anchor element (or any other specified target) as a string.
+
+#### Query an image
+`query.image([selector], [options])` or `query.img()`
+
+Options:
+* All options supported by `query.url()`.
+
+Returns the `src` from an image element (or any other specified target) as a string.
+
+#### Query a source set
+`query.sourceSet([selector], [options])` or `query.srcSet()`
+
+Options:
+* `includeDescriptor`: Produce an array of `{ descriptor, url }` instead of URL strings.
+* All options supported by `query.url()`.
+
+Returns an array of media URLs from the `srcset` of an media element as strings sorted by their descriptor from large to small.
+
+#### Query a video
+`query.video([selector], [options])`
+
+Options:
+* All options supported by `query.url()`.
+
+Returns the `src` from an video source element (or any other specified target) as a string.
 
 #### Query a date
 `query.date(selector, format, [options])`
@@ -55,13 +117,15 @@ Arguments
 * `format` (string, array): The input format as a string or array of strings described by the [Moment.js docs](https://momentjs.com/docs/#/displaying/format/).
 
 Options
-* `match (RegExp): The text to extract before attempting to parse it as a date. The default expression will attempt to extract any of 01-01-1970, 1970-01-01, 01/01/1970 or January 1, 1970 with optional 00:00[:00] time.
+* `match` (RegExp): The text to extract before attempting to parse it as a date. The default expression will attempt to extract any of 01-01-1970, 1970-01-01, 01/01/1970 or January 1, 1970 with optional 00:00[:00] time.
 * `timezone` (string): The name of the input timezone, defaults to 'UTC'.
 
 Returns a Date object.
 
-#### Querying multiple elements
-Most methods can be used in plural, returning an array of results, i.e. `query.elements()`, `query.dates()`.
+#### Query JSON
+`query.json([selector], [options])`
+
+Returns the parsed JSON content of an element as an object.
 
 ### HTTP request
 * `unprint.get(url, [options])`

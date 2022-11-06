@@ -23,6 +23,7 @@ async function initTest() {
 	console.log('link', res.context.query.url('#link'));
 	console.log('image', res.context.query.img('.image'));
 	console.log('images', res.context.query.imgs('.image'));
+	console.log('srcset', res.context.query.sourceSet('.srcset'));
 	console.log('path', res.context.query.url('#path'));
 	console.log('relative path', res.context.query.url('#relativePath'));
 	console.log('exists', res.context.query.exists('#title'));
