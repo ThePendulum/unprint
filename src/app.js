@@ -435,6 +435,48 @@ function queryDates(context, selector, format, customOptions) {
 	}));
 }
 
+function extractDuration(durationString, match) {
+	const durationMatch = durationString.match(match || /(\d+:)?\d+:\d+/);
+
+	if (durationMatch) {
+		const segments = ['00'].concat(durationMatch[0].split(/[:hm]/)).slice(-3);
+
+		return moment.duration(segments.join(':')).asSeconds();
+	}
+
+	return null;
+}
+function extractTimestamp(durationString) {
+	const timestampMatch = durationString.match(/(\d+H)?\s*(\d+M)?\s*\d+S?/i);
+
+	if (timestampMatch) {
+		const hours = timestampMatch[0].match(/(\d+)H/i)?.[1] || 0;
+		const minutes = timestampMatch[0].match(/(\d+)M/i)?.[1] || 0;
+		const seconds = timestampMatch[0].match(/(\d+)(S|$)/i)?.[1] || 0;
+
+		return (Number(hours) * 3600) + (Number(minutes) * 60) + Number(seconds);
+	}
+
+	return null;
+}
+
+function queryDuration(context, selector, customOptions) {
+	const options = { ...customOptions };
+	const durationString = queryContent(context, selector, customOptions);
+
+	if (!durationString) {
+		return null;
+	}
+
+	if (options.match) {
+		return extractDuration(durationString, options.match);
+	}
+
+	return extractDuration(durationString)
+		|| extractTimestamp(durationString)
+		|| null;
+}
+
 const queryFns = {
 	element: queryElement,
 	elements: queryElements,
@@ -459,6 +501,8 @@ const queryFns = {
 	jsons: queryJsons,
 	date: queryDate,
 	dates: queryDates,
+	duration: queryDuration,
+	dur: queryDuration,
 	sourceSet: querySourceSet,
 	srcSet: querySourceSet,
 	url: queryUrl,
@@ -638,6 +682,7 @@ module.exports = {
 	init,
 	initAll,
 	extractDate,
+	extractDuration,
 	options: configure,
 	query: initQueryFns(queryFns),
 };

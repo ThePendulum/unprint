@@ -122,6 +122,14 @@ Options
 
 Returns a Date object.
 
+#### Query a duration
+`query.duration(selector, format, [options])` or `query.dur`
+
+Options
+* `match` (RegExp): The text to extract before attempting to parse it as a duration. The default expression will attempt to extract `(hh:)mm:ss` and `PT##H##M##S`.
+
+Returns the duration in seconds as a number.
+
 #### Query JSON
 `query.json([selector], [options])`
 
