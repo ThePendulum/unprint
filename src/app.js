@@ -684,6 +684,7 @@ module.exports = {
 	initAll,
 	extractDate,
 	extractDuration,
+	extractTimestamp,
 	options: configure,
 	query: initQueryFns(queryFns),
 };
