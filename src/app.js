@@ -446,6 +446,7 @@ function extractDuration(durationString, match) {
 
 	return null;
 }
+
 function extractTimestamp(durationString) {
 	const timestampMatch = durationString.match(/(\d+H)?\s*(\d+M)?\s*\d+S?/i);
 
