@@ -18,8 +18,11 @@ async function initTest() {
 
 	console.log('title', res.context.query.content('//*[contains(text(), "Test")]'));
 	console.log('date', res.context.query.date('#date', 'DD-MM-YYYY HH:mm'));
+	console.log('date xpath', res.context.query.date('//div[contains(text(), "Today:")]', 'MMM DD, YYYY'));
 	console.log('duration', res.context.query.duration('#duration'));
 	console.log('timestamp', res.context.query.duration('#timestamp'));
+	console.log('number', res.context.query.number('.number'));
+	console.log('numbers', res.context.query.numbers('.number'));
 	console.log('data', res.context.query.json('#json'));
 	console.log('items', res.context.query.contents('.item'));
 	console.log('link', res.context.query.url('#link'));

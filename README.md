@@ -71,6 +71,14 @@ Return the number of elements that match the selector.
 
 Return the text contents of an element (`.textContent`).
 
+#### Query a number
+`query.number([selector], [options])`
+
+Options
+* `match`: The regular expression to use to extract a number from text, default `/\d+(\.\d*)?/` for decimal numbers.
+
+Return the contents of the element or attribute as a Number primitive.
+
 #### Query the HTML
 `query.content([selector], [options])`
 

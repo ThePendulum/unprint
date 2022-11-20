@@ -177,6 +177,48 @@ function queryAttributes(context, selector, attribute, customOptions) {
 	});
 }
 
+const defaultNumberRegexp = /\d+(\.\d*)?/;
+
+function matchNumberString(numberString, match) {
+	if (numberString && match) {
+		return Number(numberString.match(match)?.[0]);
+	}
+
+	if (numberString) {
+		return Number(numberString);
+	}
+
+	return null;
+}
+
+function queryNumber(context, selector, customOptions) {
+	const numberString = queryContent(context, selector, customOptions);
+
+	const options = {
+		match: defaultNumberRegexp,
+		...customOptions,
+	};
+
+	return matchNumberString(numberString, options.match);
+}
+
+function queryNumbers(context, selector, customOptions) {
+	const numberStrings = queryContents(context, selector, customOptions);
+
+	const options = {
+		match: defaultNumberRegexp,
+		...customOptions,
+	};
+
+	if (!numberStrings) {
+		return null;
+	}
+
+	return numberStrings
+		.map((numberString) => matchNumberString(numberString, options.match))
+		.filter(Boolean);
+}
+
 function queryHtml(context, selector, customOptions) {
 	const target = queryElement(context, selector, customOptions);
 
@@ -436,7 +478,7 @@ function queryDates(context, selector, format, customOptions) {
 }
 
 function extractDuration(durationString, match) {
-	const durationMatch = durationString.match(match || /(\d+:)?\d+:\d+/);
+	const durationMatch = durationString?.match(match || /(\d+:)?\d+:\d+/);
 
 	if (durationMatch) {
 		const segments = ['00'].concat(durationMatch[0].split(/[:hm]/)).slice(-3);
@@ -448,7 +490,7 @@ function extractDuration(durationString, match) {
 }
 
 function extractTimestamp(durationString) {
-	const timestampMatch = durationString.match(/(\d+H)?\s*(\d+M)?\s*\d+S?/i);
+	const timestampMatch = durationString?.match(/(\d+H)?\s*(\d+M)?\s*\d+S?/i);
 
 	if (timestampMatch) {
 		const hours = timestampMatch[0].match(/(\d+)H/i)?.[1] || 0;
@@ -500,6 +542,10 @@ const queryFns = {
 	imgs: queryImages,
 	json: queryJson,
 	jsons: queryJsons,
+	number: queryNumber,
+	num: queryNumber,
+	numbers: queryNumbers,
+	nums: queryNumbers,
 	date: queryDate,
 	dates: queryDates,
 	duration: queryDuration,
