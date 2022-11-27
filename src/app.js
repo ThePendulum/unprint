@@ -62,7 +62,7 @@ function getElements(context, selector, firstOnly = false) {
 		return context.element;
 	}
 
-	if (/^\/\//.test(selector)) {
+	if (/^\//.test(selector)) {
 		// XPath selector
 		const iterator = globalWindow.document.evaluate(selector, context.element, null, globalWindow.XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
 
