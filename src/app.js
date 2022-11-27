@@ -592,7 +592,7 @@ function initQueryFns(fns, context) {
 	}]));
 }
 
-function init(elementOrHtml, selector, options) {
+function init(elementOrHtml, selector, options = {}) {
 	if (!elementOrHtml) {
 		return null;
 	}
@@ -633,7 +633,7 @@ function init(elementOrHtml, selector, options) {
 	return context;
 }
 
-function initAll(context, selector, options) {
+function initAll(context, selector, options = {}) {
 	if (Array.isArray(context)) {
 		return context.map((element) => init(element, selector, options));
 	}
