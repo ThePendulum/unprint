@@ -33,6 +33,8 @@ async function initTest() {
 	console.log('relative path', res.context.query.url('#relativePath'));
 	console.log('exists', res.context.query.exists('#title'));
 	console.log('count', res.context.query.count('.item'), res.context.query.count('.foo'));
+	console.log('video', res.context.query.video());
+	console.log('poster', res.context.query.poster());
 }
 
 async function initServer() {

@@ -405,6 +405,28 @@ function queryVideos(context, selector = 'source', customOptions) {
 	return videoUrls.map((videoUrl) => prefixUrl(videoUrl, options.origin, options));
 }
 
+function queryPoster(context, selector = 'video', customOptions) {
+	const options = {
+		attribute: 'poster',
+		...customOptions,
+	};
+
+	const posterUrl = queryContent(context, selector, options);
+
+	return prefixUrl(posterUrl, options.origin, options);
+}
+
+function queryPosters(context, selector = 'video', customOptions) {
+	const options = {
+		attribute: 'poster',
+		...customOptions,
+	};
+
+	const posterUrls = queryContents(context, selector, options);
+
+	return posterUrls.map((posterUrl) => prefixUrl(posterUrl, options.origin, options));
+}
+
 function extractJson(element) {
 	if (!element) {
 		return null;
@@ -546,6 +568,8 @@ const queryFns = {
 	num: queryNumber,
 	numbers: queryNumbers,
 	nums: queryNumbers,
+	poster: queryPoster,
+	posters: queryPosters,
 	date: queryDate,
 	dates: queryDates,
 	duration: queryDuration,
