@@ -26,6 +26,7 @@ async function initTest() {
 	console.log('data', res.context.query.json('#json'));
 	console.log('items', res.context.query.contents('.item'));
 	console.log('link', res.context.query.url('#link'));
+	console.log('links', res.context.query.urls('.link'));
 	console.log('image', res.context.query.img('.image'));
 	console.log('images', res.context.query.imgs('.image'));
 	console.log('srcset', res.context.query.sourceSet('.srcset'));

@@ -283,9 +283,20 @@ function queryUrl(context, selector = 'a', customOptions) {
 	};
 
 	const url = queryContent(context, selector, options);
-	const curatedUrl = prefixUrl(url, options.origin, customOptions);
 
-	return curatedUrl;
+	return prefixUrl(url, options.origin, customOptions);
+}
+
+function queryUrls(context, selector = 'a', customOptions) {
+	const options = {
+		...context.options,
+		attribute: 'href',
+		...customOptions,
+	};
+
+	const urls = queryContents(context, selector, options);
+
+	return urls.map((url) => prefixUrl(url, options.origin, customOptions));
 }
 
 function getImageUrl(context, selector, options) {
@@ -577,6 +588,7 @@ const queryFns = {
 	sourceSet: querySourceSet,
 	srcSet: querySourceSet,
 	url: queryUrl,
+	urls: queryUrls,
 	video: queryVideo,
 	videos: queryVideos,
 };
