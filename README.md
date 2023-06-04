@@ -132,6 +132,7 @@ Arguments
 
 Options
 * `match` (RegExp): The text to extract before attempting to parse it as a date. The default expression will attempt to extract any of 01-01-1970, 1970-01-01, 01/01/1970 or January 1, 1970 with optional 00:00[:00] time.
+* `matchIndex`: The index of the match result, useful for expressions containing groups or a global flag, default `0`.
 * `timezone` (string): The name of the input timezone, defaults to 'UTC'.
 
 Returns a Date object.
