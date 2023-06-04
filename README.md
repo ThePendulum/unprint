@@ -101,6 +101,11 @@ Options:
 
 Returns the `src` from an image element (or any other specified target) as a string.
 
+#### Query a dataset
+`query.dataset(selector, property, [options])` or `query.data()`
+
+Return the contents of a `data-` attribute.
+
 #### Query a source set
 `query.sourceSet([selector], [options])` or `query.srcSet()`
 
