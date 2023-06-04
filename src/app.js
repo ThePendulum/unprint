@@ -177,6 +177,18 @@ function queryAttributes(context, selector, attribute, customOptions) {
 	});
 }
 
+function queryDataset(context, selector, dataAttribute, customOptions) {
+	const target = queryElement(context, selector, customOptions);
+
+	return target.dataset[dataAttribute];
+}
+
+function queryDatasets(context, selector, dataAttribute, customOptions) {
+	const targets = queryElements(context, selector, customOptions);
+
+	return targets.map((target) => target.dataset[dataAttribute]);
+}
+
 const defaultNumberRegexp = /\d+(\.\d*)?/;
 
 function matchNumberString(numberString, match) {
@@ -565,6 +577,10 @@ const queryFns = {
 	attributes: queryAttributes,
 	attr: queryAttribute,
 	attrs: queryAttributes,
+	dataset: queryDataset,
+	datasets: queryDatasets,
+	data: queryDataset,
+	datas: queryDatasets,
 	exists: queryExistence,
 	count: queryCount,
 	html: queryHtml,

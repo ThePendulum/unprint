@@ -36,6 +36,8 @@ async function initTest() {
 	console.log('count', res.context.query.count('.item'), res.context.query.count('.foo'));
 	console.log('video', res.context.query.video());
 	console.log('poster', res.context.query.poster());
+	console.log('dataset', res.context.query.dataset('.dataset', 'foo'));
+	console.log('datasets', res.context.query.datasets('.dataset', 'hello'));
 }
 
 async function initServer() {
