@@ -41,7 +41,7 @@ query.element('h1#title'); // HTMLHeadingElement
 **From here on, the query methods will be described in their initialized form.** The API for the *uninitialized* methods is identical, except for the element passed as the first argument
 
 #### Selector
-The selector can be a CSS selector, an XPath selector starting with `//`, or an array of either or both acting as fallbacks. If the selector is falsy, the input element will be used.
+The selector can be a CSS selector, an XPath selector starting with `/`, or an array of either or both acting as fallbacks. If the selector is falsy, the input element will be used.
 
 #### Querying multiple elements
 Most methods can be used in plural, returning an array of results, i.e. `query.elements()`, `query.dates()`.
@@ -75,7 +75,8 @@ Return the text contents of an element (`.textContent`).
 `query.number([selector], [options])`
 
 Options
-* `match`: The regular expression to use to extract a number from text, default `/\d+(\.\d*)?/` for decimal numbers.
+* `match`: The regular expression to use to extract a number from text, default `/\d+(\.\d+)?/` for decimal numbers.
+* `matchIndex`: The index of the match result, useful for expressions containing groups or a global flag, default `0`.
 
 Return the contents of the element or attribute as a Number primitive.
 

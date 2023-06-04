@@ -189,11 +189,11 @@ function queryDatasets(context, selector, dataAttribute, customOptions) {
 	return targets.map((target) => target.dataset[dataAttribute]);
 }
 
-const defaultNumberRegexp = /\d+(\.\d*)?/;
+const defaultNumberRegexp = /\d+(\.\d+)?/;
 
-function matchNumberString(numberString, match) {
-	if (numberString && match) {
-		return Number(numberString.match(match)?.[0]);
+function matchNumberString(numberString, options) {
+	if (numberString && options.match) {
+		return Number(numberString.match(options.match)?.[options.matchIndex]);
 	}
 
 	if (numberString) {
@@ -208,10 +208,11 @@ function queryNumber(context, selector, customOptions) {
 
 	const options = {
 		match: defaultNumberRegexp,
+		matchIndex: 0,
 		...customOptions,
 	};
 
-	return matchNumberString(numberString, options.match);
+	return matchNumberString(numberString, options);
 }
 
 function queryNumbers(context, selector, customOptions) {
@@ -219,6 +220,7 @@ function queryNumbers(context, selector, customOptions) {
 
 	const options = {
 		match: defaultNumberRegexp,
+		matchIndex: 0,
 		...customOptions,
 	};
 
@@ -227,7 +229,7 @@ function queryNumbers(context, selector, customOptions) {
 	}
 
 	return numberStrings
-		.map((numberString) => matchNumberString(numberString, options.match))
+		.map((numberString) => matchNumberString(numberString, options))
 		.filter(Boolean);
 }
 
