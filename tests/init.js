@@ -23,6 +23,7 @@ async function initTest() {
 	console.log('timestamp', res.context.query.duration('#timestamp'));
 	console.log('number', res.context.query.number('.number'));
 	console.log('numbers', res.context.query.numbers('.number'));
+	console.log('number indexed', res.context.query.number('.number', { match: /(\d+)/, matchIndex: 1 }));
 	console.log('data', res.context.query.json('#json'));
 	console.log('items', res.context.query.contents('.item'));
 	console.log('link', res.context.query.url('#link'));

@@ -452,28 +452,28 @@ function queryPosters(context, selector = 'video', customOptions) {
 	return posterUrls.map((posterUrl) => prefixUrl(posterUrl, options.origin, options));
 }
 
-function extractJson(element) {
-	if (!element) {
+function extractJson(dataString) {
+	if (!dataString) {
 		return null;
 	}
 
 	try {
-		return JSON.parse(element.innerHTML);
+		return JSON.parse(dataString);
 	} catch (error) {
 		return null;
 	}
 }
 
 function queryJson(context, selector, customOptions) {
-	const target = queryElement(context, selector, customOptions);
+	const dataString = queryContent(context, selector, customOptions);
 
-	return extractJson(target);
+	return extractJson(dataString);
 }
 
 function queryJsons(context, selector, customOptions) {
-	const targets = queryElements(context, selector, customOptions);
+	const dataStrings = queryContents(context, selector, customOptions);
 
-	return targets.map((target) => extractJson(target)).filter(Boolean);
+	return dataStrings.map((dataString) => extractJson(dataString)).filter(Boolean);
 }
 
 function extractDate(dateString, format, customOptions) {
