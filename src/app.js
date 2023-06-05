@@ -362,14 +362,12 @@ function queryImages(context, selector = 'img', customOptions) {
 	return imageUrls.map((imageUrl) => prefixUrl(imageUrl, options.origin, options));
 }
 
-function querySourceSet(context, selector, attr = 'srcset', customOptions = {}) {
-	const srcset = queryAttribute(context, selector, attr, customOptions);
-
-	if (!srcset) {
+function extractSourceSet(sourceSet, customOptions) {
+	if (!sourceSet) {
 		return null;
 	}
 
-	const sources = srcset
+	const sources = sourceSet
 		.split(/\s*,\s*/)
 		.map((source) => {
 			const [link, descriptor] = source.split(' ');
@@ -404,6 +402,18 @@ function querySourceSet(context, selector, attr = 'srcset', customOptions = {}) 
 	}
 
 	return sources.map((source) => prefixUrl(source.url));
+}
+
+function querySourceSet(context, selector, attr = 'srcset', customOptions = {}) {
+	const sourceSet = queryAttribute(context, selector, attr, customOptions);
+
+	return extractSourceSet(sourceSet, customOptions);
+}
+
+function querySourceSets(context, selector, attr = 'srcset', customOptions = {}) {
+	const sourceSets = queryAttributes(context, selector, attr, customOptions);
+
+	return sourceSets.map((sourceSet) => extractSourceSet(sourceSet, customOptions));
 }
 
 function queryVideo(context, selector = 'source', customOptions) {
@@ -605,7 +615,9 @@ const queryFns = {
 	duration: queryDuration,
 	dur: queryDuration,
 	sourceSet: querySourceSet,
+	sourceSets: querySourceSets,
 	srcSet: querySourceSet,
+	srcSets: querySourceSets,
 	url: queryUrl,
 	urls: queryUrls,
 	video: queryVideo,
