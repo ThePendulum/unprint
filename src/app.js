@@ -765,6 +765,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 
 	const contextOptions = {
 		...defaultOptions,
+		...customOptions,
 		origin: url,
 	};
 
