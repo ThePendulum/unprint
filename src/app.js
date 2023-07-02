@@ -193,11 +193,11 @@ const defaultNumberRegexp = /\d+(\.\d+)?/;
 
 function matchNumberString(numberString, options) {
 	if (numberString && options.match) {
-		return Number(numberString.match(options.match)?.[options.matchIndex]);
+		return Number(numberString.match(options.match)?.[options.matchIndex]) || null;
 	}
 
 	if (numberString) {
-		return Number(numberString);
+		return Number(numberString) || null;
 	}
 
 	return null;
