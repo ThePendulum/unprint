@@ -249,6 +249,51 @@ function queryHtmls(context, selector, customOptions) {
 	return targets.map((target) => trim(target.innerHTML));
 }
 
+function extractText(target, customOptions) {
+	const options = {
+		filter: true,
+		trim: true,
+		join: true,
+		...customOptions,
+	};
+
+	const nodes = Array.from(target.childNodes)
+		.filter((node) => node.nodeName === '#text')
+		.map((node) => (options.trim ? trim(node.textContent) : node.textContent));
+
+	const filteredNodes = options.filter
+		? nodes.filter(Boolean)
+		: nodes;
+
+	if (options.join) {
+		const text = filteredNodes.join(typeof options.join === 'string' ? options.join : ' ');
+
+		if (options.trim) {
+			return text.trim();
+		}
+
+		return text;
+	}
+
+	return filteredNodes;
+}
+
+function queryText(context, selector, customOptions) {
+	const target = queryElement(context, selector, customOptions);
+
+	if (!target) {
+		return null;
+	}
+
+	return extractText(target, customOptions);
+}
+
+function queryTexts(context, selector, customOptions) {
+	const targets = queryElements(context, selector, customOptions);
+
+	return targets.map((target) => extractText(target, customOptions));
+}
+
 function prefixUrl(urlPath, originUrl, customOptions) {
 	if (!urlPath) {
 		return null;
@@ -626,6 +671,8 @@ const queryFns = {
 	sourceSets: querySourceSets,
 	srcSet: querySourceSet,
 	srcSets: querySourceSets,
+	text: queryText,
+	texts: queryTexts,
 	url: queryUrl,
 	urls: queryUrls,
 	video: queryVideo,

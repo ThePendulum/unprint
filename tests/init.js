@@ -28,6 +28,9 @@ async function initTest() {
 	console.log('items', res.context.query.contents('.item'));
 	console.log('link', res.context.query.url('#link'));
 	console.log('links', res.context.query.urls('.link'));
+	console.log('text', res.context.query.text('.text'));
+	console.log('texts', res.context.query.text('.text', { join: false }));
+	console.log('all texts', res.context.query.texts('.text'));
 	console.log('image', res.context.query.img('.image'));
 	console.log('images', res.context.query.imgs('.image'));
 	console.log('srcset', res.context.query.sourceSet('.srcset'));

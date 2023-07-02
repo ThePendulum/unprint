@@ -85,6 +85,16 @@ Return the contents of the element or attribute as a Number primitive.
 
 Return the HTML contents of an element (`.innerHTML`).
 
+#### Query the text
+`query.text([selector], [options])`
+
+Return the text contents of an element, skipping non-text children, as opposed to querying content.
+
+Options
+* `join`: Join text nodes into one string
+* `trim`: Remove excess whitespace
+* `filter`: Remove empty text nodes
+
 #### Query a URL
 `query.url([selector], [options])`
 
