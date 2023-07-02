@@ -535,6 +535,14 @@ function queryDates(context, selector, format, customOptions) {
 	}));
 }
 
+function formatDate(dateValue, format, inputFormat) {
+	if (inputFormat) {
+		return moment(dateValue, inputFormat).format(format);
+	}
+
+	return moment(dateValue).format(format);
+}
+
 function extractDuration(durationString, match) {
 	const durationMatch = durationString?.match(match || /(\d+:)?\d+:\d+/);
 
@@ -799,6 +807,7 @@ module.exports = {
 	extractDate,
 	extractDuration,
 	extractTimestamp,
+	formatDate,
 	prefixUrl,
 	options: configure,
 	query: initQueryFns(queryFns),
