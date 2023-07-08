@@ -732,7 +732,7 @@ function init(elementOrHtml, selector, options = {}) {
 	}
 
 	const element = selector
-		? elementOrHtml.querySelector(selector)
+		? queryElement({ element: elementOrHtml }, selector)
 		: elementOrHtml;
 
 	if (!element) {
@@ -772,7 +772,7 @@ function initAll(context, selector, options = {}) {
 		return handleError(new Error('Init context is not a DOM element, HTML or an array'), 'INVALID_CONTEXT');
 	}
 
-	return Array.from(context.querySelectorAll(selector))
+	return queryElements({ element: context }, selector)
 		.map((element) => init(element, null, options));
 }
 
