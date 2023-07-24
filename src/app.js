@@ -788,9 +788,10 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		method,
 		data: body,
 		validateStatus: null,
+		...options,
 		timeout: options.timeout,
 		signal: options.abortSignal,
-		...options,
+		httpsAgent: options.httpsAgent,
 	});
 
 	if (!(res.status >= 200 && res.status < 300)) {
