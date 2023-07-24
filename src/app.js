@@ -1,6 +1,8 @@
 'use strict';
 
 const { JSDOM, VirtualConsole } = require('jsdom');
+const http = require('http');
+const https = require('https');
 const axios = require('axios').default;
 const moment = require('moment-timezone');
 const merge = require('deepmerge');
@@ -791,8 +793,8 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		...options,
 		timeout: options.timeout,
 		signal: options.abortSignal,
-		httpAgent: options.httpAgent,
-		httpsAgent: options.httpsAgent,
+		httpAgent: new http.Agent({ ...options.agent }),
+		httpsAgent: new https.Agent({ ...options.agent }),
 	});
 
 	if (!(res.status >= 200 && res.status < 300)) {
