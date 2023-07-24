@@ -791,6 +791,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		...options,
 		timeout: options.timeout,
 		signal: options.abortSignal,
+		httpAgent: options.httpAgent,
 		httpsAgent: options.httpsAgent,
 	});
 
