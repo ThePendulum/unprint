@@ -603,12 +603,12 @@ function extractDuration(durationString, match) {
 }
 
 function extractTimestamp(durationString) {
-	const timestampMatch = durationString?.match(/(\d+H)?\s*(\d+M)?\s*\d+S?/i);
+	const timestampMatch = durationString?.match(/(\d+\s*H)?.*(\d+\s*M)?.*(\d+\s*(S|$))?/i)?.[0];
 
 	if (timestampMatch) {
-		const hours = timestampMatch[0].match(/(\d+)H/i)?.[1] || 0;
-		const minutes = timestampMatch[0].match(/(\d+)M/i)?.[1] || 0;
-		const seconds = timestampMatch[0].match(/(\d+)(S|$)/i)?.[1] || 0;
+		const hours = timestampMatch.match(/(\d+)\s*H/i)?.[1] || 0;
+		const minutes = timestampMatch.match(/(\d+)\s*M/i)?.[1] || 0;
+		const seconds = timestampMatch.match(/(\d+)\s*(s(ec\w*)?)|$/i)?.[1] || 0;
 
 		return (Number(hours) * 3600) + (Number(minutes) * 60) + Number(seconds);
 	}
