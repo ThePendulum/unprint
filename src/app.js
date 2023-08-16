@@ -191,7 +191,7 @@ function queryDatasets(context, selector, dataAttribute, customOptions) {
 	return targets.map((target) => target.dataset[dataAttribute]);
 }
 
-const defaultNumberRegexp = /\d+(\.\d+)?/;
+const defaultNumberRegexp = /\d+([.,]\d+)?/;
 
 function matchNumberString(numberString, options) {
 	if (numberString && options.match) {
