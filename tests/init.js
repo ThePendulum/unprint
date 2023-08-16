@@ -24,6 +24,7 @@ async function initTest() {
 	console.log('timestring', res.context.query.duration('#timestring'));
 	console.log('number', res.context.query.number('.number'));
 	console.log('numbers', res.context.query.numbers('.number'));
+	console.log('numbers comma', res.context.query.numbers('.number', { separator: ',' }));
 	console.log('number indexed', res.context.query.number('.number', { match: /(\d+)/, matchIndex: 1 }));
 	console.log('data', res.context.query.json('#json'));
 	console.log('items', res.context.query.contents('.item'));

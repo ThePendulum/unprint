@@ -193,13 +193,17 @@ function queryDatasets(context, selector, dataAttribute, customOptions) {
 
 const defaultNumberRegexp = /\d+([.,]\d+)?/;
 
-function matchNumberString(numberString, options) {
+function matchNumberString(rawNumberString, options) {
+	const numberString = options.separator === ','
+		? rawNumberString.replace(',', '.')
+		: rawNumberString.replace(',', '');
+
 	if (numberString && options.match) {
-		return Number(numberString.match(options.match)?.[options.matchIndex]?.replace(',', '.')) || null;
+		return Number(numberString.match(options.match)?.[options.matchIndex]) || null;
 	}
 
 	if (numberString) {
-		return Number(numberString.replace(',', '.')) || null;
+		return Number(numberString) || null;
 	}
 
 	return null;
@@ -211,6 +215,7 @@ function queryNumber(context, selector, customOptions) {
 	const options = {
 		match: defaultNumberRegexp,
 		matchIndex: 0,
+		separator: '.',
 		...customOptions,
 	};
 
@@ -223,6 +228,7 @@ function queryNumbers(context, selector, customOptions) {
 	const options = {
 		match: defaultNumberRegexp,
 		matchIndex: 0,
+		separator: '.',
 		...customOptions,
 	};
 

@@ -77,6 +77,7 @@ Return the text contents of an element (`.textContent`).
 Options
 * `match`: The regular expression to use to extract a number from text, default `/\d+(\.\d+)?/` for decimal numbers.
 * `matchIndex`: The index of the match result, useful for expressions containing groups or a global flag, default `0`.
+* `separator`: Whether to use `.` (Europe) or `,` (US) as the decimal separator, default `.`
 
 Return the contents of the element or attribute as a Number primitive.
 
