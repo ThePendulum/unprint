@@ -869,6 +869,10 @@ module.exports = {
 	extractDuration,
 	extractTimestamp,
 	formatDate,
+	dateConstants: {
+		ISO_8601: moment.ISO_8601,
+		...moment.HTML5_FMT,
+	},
 	prefixUrl,
 	options: configure,
 	query: initQueryFns(queryFns),
