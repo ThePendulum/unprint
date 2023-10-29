@@ -194,6 +194,10 @@ function queryDatasets(context, selector, dataAttribute, customOptions) {
 const defaultNumberRegexp = /\d+([.,]\d+)?/;
 
 function matchNumberString(rawNumberString, options) {
+	if (!rawNumberString) {
+		return null;
+	}
+
 	const numberString = options.separator === ','
 		? rawNumberString.replace(',', '.')
 		: rawNumberString.replace(',', '');
