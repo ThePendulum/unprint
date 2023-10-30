@@ -135,7 +135,9 @@ function extractContent(element, options) {
 
 	if (attributeKey) {
 		// handle attribute extraction in content method so all methods can easily optionally query a specific attribute
-		const attribute = element[attributeKey] || element.getAttribute(attributeKey);
+		const attribute = options.forceGetAttribute
+			? element.getAttribute(attributeKey)
+			: element[attributeKey] || element.getAttribute(attributeKey);
 
 		if (attribute && options.trim) {
 			return trim(attribute);
@@ -350,6 +352,7 @@ function queryUrl(context, selector = 'a', customOptions) {
 	const options = {
 		...context.options,
 		attribute: 'href',
+		forceGetAttribute: true, // don't get origin URL when empty
 		...customOptions,
 	};
 
@@ -362,6 +365,7 @@ function queryUrls(context, selector = 'a', customOptions) {
 	const options = {
 		...context.options,
 		attribute: 'href',
+		forceGetAttribute: true, // don't get origin URL when empty
 		...customOptions,
 	};
 
@@ -401,6 +405,7 @@ function queryImage(context, selector = 'img', customOptions) {
 	const options = {
 		...context.options,
 		...customOptions,
+		forceGetAttribute: true, // don't get origin URL when empty
 	};
 
 	const imageUrl = getImageUrl(context, selector, options);
@@ -412,6 +417,7 @@ function queryImages(context, selector = 'img', customOptions) {
 	const options = {
 		...context.options,
 		...customOptions,
+		forceGetAttribute: true, // don't get origin URL when empty
 	};
 
 	const imageUrls = getImageUrls(context, selector, options);
@@ -477,6 +483,7 @@ function queryVideo(context, selector = 'source', customOptions) {
 	const options = {
 		...context.options,
 		attribute: 'src',
+		forceGetAttribute: true, // don't get origin URL when empty
 		...customOptions,
 	};
 
@@ -489,6 +496,7 @@ function queryVideos(context, selector = 'source', customOptions) {
 	const options = {
 		...context.options,
 		attribute: 'src',
+		forceGetAttribute: true, // don't get origin URL when empty
 		...customOptions,
 	};
 
