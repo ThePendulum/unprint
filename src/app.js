@@ -184,7 +184,11 @@ function queryAttributes(context, selector, attribute, customOptions) {
 function queryDataset(context, selector, dataAttribute, customOptions) {
 	const target = queryElement(context, selector, customOptions);
 
-	return target.dataset[dataAttribute];
+	if (target) {
+		return target.dataset[dataAttribute];
+	}
+
+	return null;
 }
 
 function queryDatasets(context, selector, dataAttribute, customOptions) {

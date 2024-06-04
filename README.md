@@ -24,14 +24,14 @@ For optimal flexibility, unprint query methods can be used with or without initi
 Both `unprint.get()` and `unprint.init()` return its `query` methods pre-initialized, removing the element argument in favor of the element retrieved or received. Initialized query methods therefore will *not* accept a custom element, usually expecting the selector as the first argument instead.
 
 ```javascript
-const result = await unprint.get('http://localhot:3101/html');
+const result = await unprint.get('http://localhost:3101/html');
 const { query } = result.context;
 
 query.element('h1#title'); // HTMLHeadingElement
 ```
 
 ```javascript
-const result = await fetch('http://localhot:3101/html');
+const result = await fetch('http://localhost:3101/html');
 const body = await res.text();
 const { query } = await unprint.init(body);
 
