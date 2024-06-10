@@ -483,6 +483,43 @@ function querySourceSets(context, selector, attr = 'srcset', customOptions = {})
 	return sourceSets.map((sourceSet) => extractSourceSet(sourceSet, customOptions));
 }
 
+/*
+function removeStyleFunctionSpaces(el) {
+	// jsdom appears to have a bug where it ignores inline CSS attributes set to a function() containing spaces, e.g. url( image.png )
+	el.setAttribute('style', el.getAttribute('style').replace(/\(\s+(.*)\s+\)/g, (match, cssArgs) => `(${cssArgs})`));
+}
+*/
+
+function queryStyle(context, selector, customOptions) {
+	const options = {
+		...customOptions,
+		attribute: 'style',
+	};
+
+	const style = queryContent(context, selector, options);
+
+	if (style) {
+		return options.styleAttribute
+			? style.getPropertyValue(options.styleAttribute)
+			: style._values;
+	}
+
+	return null;
+}
+
+function queryStyles(context, selector, customOptions) {
+	const options = {
+		...customOptions,
+		attribute: 'style',
+	};
+
+	const elStyles = queryContents(context, selector, options).map((style) => (options.styleAttribute
+		? style.getPropertyValue(options.styleAttribute)
+		: style._values));
+
+	return elStyles;
+}
+
 function queryVideo(context, selector = 'source', customOptions) {
 	const options = {
 		...context.options,
@@ -681,6 +718,8 @@ const queryFns = {
 	imgs: queryImages,
 	json: queryJson,
 	jsons: queryJsons,
+	style: queryStyle,
+	styles: queryStyles,
 	number: queryNumber,
 	num: queryNumber,
 	numbers: queryNumbers,
