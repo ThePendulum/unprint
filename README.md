@@ -161,6 +161,14 @@ Returns the duration in seconds as a number.
 
 Returns the parsed JSON content of an element as an object.
 
+#### Query style
+`query.style([selector], [options])`
+
+Options
+* `styleAttribute`: the CSS style attribute to extract, returns an object with all properties by default.
+
+Returns the CSS style attributes of an element as an object.
+
 ### HTTP request
 * `unprint.get(url, [options])`
 * `unprint.post(url, body, [options])`
