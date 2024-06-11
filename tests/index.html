@@ -42,7 +42,8 @@
 		<img class="srcset" srcset="https://i.redd.it/e91oo4ueyeb71.jpg 240w, https://i.redd.it/vn9h981hlx281.png 480w, https://i.redd.it/e91oo4ueyeb71.jpg 640w">
 		<img class="srcset" srcset="https://i.redd.it/e91oo4ueyeb71.jpg 240w, https://i.redd.it/vn9h981hlx281.png 480w, https://i.redd.it/e91oo4ueyeb71.jpg 640w">
 
-		<div class="style" style="background-image: url('https://i.imgur.com/eDQmLys.jpg'); color: red;"></div>
+		<!-- deliberate space in url( ) to test JSDOM's quirky handling of this -->
+		<div class="style" style="background-image: url( https://i.imgur.com/eDQmLys.jpg ); color: red;"></div>
 		<div class="style" style="margin: 1rem; color: blue;"></div>
 
 		<video id="video" poster="https://i.imgur.com/eDQmLys.jpg"><source src="https://i.imgur.com/eDQmLys.mp4"></video>

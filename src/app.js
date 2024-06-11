@@ -483,12 +483,10 @@ function querySourceSets(context, selector, attr = 'srcset', customOptions = {})
 	return sourceSets.map((sourceSet) => extractSourceSet(sourceSet, customOptions));
 }
 
-/*
 function removeStyleFunctionSpaces(el) {
 	// jsdom appears to have a bug where it ignores inline CSS attributes set to a function() containing spaces, e.g. url( image.png )
 	el.setAttribute('style', el.getAttribute('style').replace(/\(\s+(.*)\s+\)/g, (match, cssArgs) => `(${cssArgs})`));
 }
-*/
 
 function queryStyle(context, selector, customOptions) {
 	const options = {
@@ -496,12 +494,16 @@ function queryStyle(context, selector, customOptions) {
 		attribute: 'style',
 	};
 
-	const style = queryContent(context, selector, options);
+	const element = queryElement(context, selector, options);
 
-	if (style) {
-		return options.styleAttribute
-			? style.getPropertyValue(options.styleAttribute)
-			: style._values;
+	if (element) {
+		removeStyleFunctionSpaces(element);
+
+		if (element.style) {
+			return options.styleAttribute
+				? element.style.getPropertyValue(options.styleAttribute)
+				: element.style._values;
+		}
 	}
 
 	return null;
@@ -513,11 +515,19 @@ function queryStyles(context, selector, customOptions) {
 		attribute: 'style',
 	};
 
-	const elStyles = queryContents(context, selector, options).map((style) => (options.styleAttribute
-		? style.getPropertyValue(options.styleAttribute)
-		: style._values));
+	const elStyles = queryElements(context, selector, options).map((element) => {
+		removeStyleFunctionSpaces(element);
 
-	return elStyles;
+		if (element.style) {
+			return options.styleAttribute
+				? element.style.getPropertyValue(options.styleAttribute)
+				: element.style._values;
+		}
+
+		return null;
+	});
+
+	return elStyles.filter(Boolean);
 }
 
 function queryVideo(context, selector = 'source', customOptions) {
