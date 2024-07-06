@@ -317,16 +317,10 @@ function prefixUrl(urlPath, originUrl, customOptions) {
 		return null;
 	}
 
-	if (!originUrl) {
-		return urlPath;
-	}
-
 	const options = {
 		protocol: 'https',
 		...customOptions,
 	};
-
-	const { origin, protocol } = new URL(originUrl);
 
 	if (/^http/.test(urlPath)) {
 		// this is already a complete URL
@@ -336,6 +330,12 @@ function prefixUrl(urlPath, originUrl, customOptions) {
 	if (options.protocol && /^\/\//.test(urlPath)) {
 		return `${options.protocol.replace(/:$/, '')}:${urlPath}`; // allow protocol to be defined either as 'https' or 'https:'
 	}
+
+	if (!originUrl) {
+		return urlPath;
+	}
+
+	const { origin, protocol } = new URL(originUrl);
 
 	if (protocol && /^\/\//.test(urlPath)) {
 		return `${protocol}${urlPath}`;
