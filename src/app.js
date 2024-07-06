@@ -530,7 +530,7 @@ function queryStyles(context, selector, customOptions) {
 	return elStyles.filter(Boolean);
 }
 
-function queryVideo(context, selector = 'source', customOptions) {
+function queryVideo(context, selector = 'video source', customOptions) {
 	const options = {
 		...context.options,
 		attribute: 'src',
@@ -543,7 +543,7 @@ function queryVideo(context, selector = 'source', customOptions) {
 	return prefixUrl(videoUrl, options.origin, options);
 }
 
-function queryVideos(context, selector = 'source', customOptions) {
+function queryVideos(context, selector = 'video source', customOptions) {
 	const options = {
 		...context.options,
 		attribute: 'src',
