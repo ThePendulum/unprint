@@ -66,7 +66,7 @@ function getElements(context, selector, firstOnly = false) {
 
 	if (/^\//.test(selector)) {
 		// XPath selector
-		const iterator = globalWindow.document.evaluate(selector, context.element, null, globalWindow.XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+		const iterator = globalWindow.document.evaluate(`.${selector}`, context.element, null, globalWindow.XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
 
 		if (firstOnly) {
 			return iterator.iterateNext();
