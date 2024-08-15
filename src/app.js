@@ -200,7 +200,7 @@ function queryDatasets(context, selector, dataAttribute, customOptions) {
 
 const defaultNumberRegexp = /\d+([.,]\d+)?/;
 
-function matchNumberString(rawNumberString, options) {
+function extractNumber(rawNumberString, options) {
 	if (!rawNumberString) {
 		return null;
 	}
@@ -230,7 +230,7 @@ function queryNumber(context, selector, customOptions) {
 		...customOptions,
 	};
 
-	return matchNumberString(numberString, options);
+	return extractNumber(numberString, options);
 }
 
 function queryNumbers(context, selector, customOptions) {
@@ -248,7 +248,7 @@ function queryNumbers(context, selector, customOptions) {
 	}
 
 	return numberStrings
-		.map((numberString) => matchNumberString(numberString, options))
+		.map((numberString) => extractNumber(numberString, options))
 		.filter(Boolean);
 }
 
@@ -928,6 +928,7 @@ module.exports = {
 	initAll,
 	extractDate,
 	extractDuration,
+	extractNumber,
 	extractTimestamp,
 	formatDate,
 	dateConstants: {
