@@ -31,10 +31,6 @@ function handleError(error, code) {
 virtualConsole.on('error', (message) => handleError(message, 'JSDOM'));
 virtualConsole.on('jsdomError', (message) => handleError(message, 'JSDOM'));
 
-const defaultOptions = {
-	trim: true,
-};
-
 let globalOptions = {};
 
 function configure(newOptions) {
@@ -154,7 +150,12 @@ function extractContent(element, options) {
 }
 
 function queryContent(context, selector, customOptions) {
-	const options = { ...context.options, ...customOptions };
+	const options = {
+		...context.options,
+		trim: true,
+		...customOptions,
+	};
+
 	const target = queryElement(context, selector, options);
 
 	return extractContent(target, options);
@@ -894,7 +895,6 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 	}
 
 	const contextOptions = {
-		...defaultOptions,
 		...customOptions,
 		origin: url,
 	};
