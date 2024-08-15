@@ -200,10 +200,17 @@ function queryDatasets(context, selector, dataAttribute, customOptions) {
 
 const defaultNumberRegexp = /\d+([.,]\d+)?/;
 
-function extractNumber(rawNumberString, options) {
+function extractNumber(rawNumberString, customOptions) {
 	if (!rawNumberString) {
 		return null;
 	}
+
+	const options = {
+		match: defaultNumberRegexp,
+		matchIndex: 0,
+		separator: '.',
+		...customOptions,
+	};
 
 	const numberString = options.separator === ','
 		? rawNumberString.replace(',', '.')
@@ -223,32 +230,18 @@ function extractNumber(rawNumberString, options) {
 function queryNumber(context, selector, customOptions) {
 	const numberString = queryContent(context, selector, customOptions);
 
-	const options = {
-		match: defaultNumberRegexp,
-		matchIndex: 0,
-		separator: '.',
-		...customOptions,
-	};
-
-	return extractNumber(numberString, options);
+	return extractNumber(numberString, customOptions);
 }
 
 function queryNumbers(context, selector, customOptions) {
 	const numberStrings = queryContents(context, selector, customOptions);
-
-	const options = {
-		match: defaultNumberRegexp,
-		matchIndex: 0,
-		separator: '.',
-		...customOptions,
-	};
 
 	if (!numberStrings) {
 		return null;
 	}
 
 	return numberStrings
-		.map((numberString) => extractNumber(numberString, options))
+		.map((numberString) => extractNumber(numberString, customOptions))
 		.filter(Boolean);
 }
 
