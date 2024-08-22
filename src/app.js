@@ -865,7 +865,13 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 	if (!(res.status >= 200 && res.status < 300)) {
 		handleError(new Error(`HTTP response from ${url} not OK (${res.status} ${res.statusText}): ${res.data}`), 'HTTP_NOT_OK');
 
-		return res.status;
+		return {
+			ok: false,
+			status: res.status,
+			statusText: res.statusText,
+			response: res,
+			res,
+		};
 	}
 
 	const base = {
