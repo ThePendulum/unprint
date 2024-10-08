@@ -38,7 +38,8 @@ async function initTest() {
 	console.log('srcset', res.context.query.sourceSet('.srcset'));
 	console.log('srcsets', res.context.query.sourceSets('.srcset'));
 	console.log('style', res.context.query.style('.style'));
-	console.log('style background', res.context.query.style('.style', { styleAttribute: 'background-image' }));
+	console.log('style background-image', res.context.query.style('.style', { styleAttribute: 'background-image' }));
+	console.log('style background', res.context.query.style('.background'));
 	console.log('styles', res.context.query.styles('.style'));
 	console.log('styles color', res.context.query.styles('.style', { styleAttribute: 'color' }));
 	console.log('path', res.context.query.url('#path'));

@@ -479,19 +479,24 @@ function querySourceSets(context, selector, attr = 'srcset', customOptions = {})
 
 function removeStyleFunctionSpaces(el) {
 	// jsdom appears to have a bug where it ignores inline CSS attributes set to a function() containing spaces, e.g. url( image.png )
-	el.setAttribute('style', el.getAttribute('style').replace(/\(\s+(.*)\s+\)/g, (match, cssArgs) => `(${cssArgs})`));
+	el.setAttribute('style', el.getAttribute('style')
+		.replace(/\(\s+(.*)\s+\)/g, (match, cssArgs) => `(${cssArgs})`)
+		.replace(/\)[\w\s-]+;/g, ');'));
 }
 
 function queryStyle(context, selector, customOptions) {
 	const options = {
-		...customOptions,
 		attribute: 'style',
+		attemptBugfix: true,
+		...customOptions,
 	};
 
 	const element = queryElement(context, selector, options);
 
 	if (element) {
-		removeStyleFunctionSpaces(element);
+		if (options.attemptBugfix) {
+			removeStyleFunctionSpaces(element, options);
+		}
 
 		if (element.style) {
 			return options.styleAttribute
