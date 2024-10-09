@@ -481,7 +481,7 @@ function removeStyleFunctionSpaces(el) {
 	// jsdom appears to have a bug where it ignores inline CSS attributes set to a function() containing spaces, e.g. url( image.png )
 	el.setAttribute('style', el.getAttribute('style')
 		.replace(/\(\s+(.*)\s+\)/g, (match, cssArgs) => `(${cssArgs})`)
-		.replace(/\)[\w\s-]+;/g, ');'));
+		.replace(/\)[\w\s/-]+;/g, ');'));
 }
 
 function queryStyle(context, selector, customOptions) {
