@@ -217,11 +217,23 @@ function extractNumber(rawNumberString, customOptions) {
 		: rawNumberString.replace(',', '');
 
 	if (numberString && options.match) {
-		return Number(numberString.match(options.match)?.[options.matchIndex]) || null;
+		const number = Number(numberString.match(options.match)?.[options.matchIndex]);
+
+		if (Number.isNaN(number)) {
+			return null;
+		}
+
+		return number;
 	}
 
 	if (numberString) {
-		return Number(numberString) || null;
+		const number = Number(numberString);
+
+		if (Number.isNaN(number)) {
+			return null;
+		}
+
+		return number;
 	}
 
 	return null;
