@@ -926,7 +926,8 @@ function getLimiter(url, options) {
 
 	return {
 		limiter: limiters[interval][concurrency],
-		interval: concurrency,
+		interval,
+		concurrency,
 	};
 }
 
