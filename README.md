@@ -216,3 +216,4 @@ Triggers:
 * `requestInit`: A HTTP request is about to be made
 * `requestSuccess`: The HTTP request completed with an OK status code
 * `requestError`: The HTTP request completed with an error status code
+* `query`: A query method was used
