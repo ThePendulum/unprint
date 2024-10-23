@@ -1,6 +1,7 @@
 'use strict';
 
 const { JSDOM, VirtualConsole } = require('jsdom');
+const Bottleneck = require('bottleneck');
 const http = require('http');
 const https = require('https');
 const axios = require('axios').default;
@@ -11,17 +12,31 @@ const settings = {
 	throwErrors: false,
 	logErrors: true,
 	requestTimeout: 30000,
+	limits: {
+		default: {
+			interval: 10,
+			concurrency: 10,
+		},
+	},
 };
 
 const virtualConsole = new VirtualConsole();
 const { window: globalWindow } = new JSDOM('', { virtualConsole });
 
+let globalOptions = {
+	...settings,
+};
+
+function configure(newOptions) {
+	globalOptions = merge(globalOptions, newOptions);
+}
+
 function handleError(error, code) {
-	if (settings.logErrors) {
+	if (globalOptions.logErrors) {
 		console.error(`unprint encountered an error (${code}): ${error.message}`);
 	}
 
-	if (settings.throwErrors) {
+	if (globalOptions.throwErrors) {
 		throw Object.assign(error, { code });
 	}
 
@@ -30,12 +45,6 @@ function handleError(error, code) {
 
 virtualConsole.on('error', (message) => handleError(message, 'JSDOM'));
 virtualConsole.on('jsdomError', (message) => handleError(message, 'JSDOM'));
-
-let globalOptions = {};
-
-function configure(newOptions) {
-	globalOptions = newOptions;
-}
 
 function trim(string) {
 	if (typeof string === 'string') {
@@ -860,6 +869,41 @@ function initAll(context, selector, options = {}) {
 		.map((element) => init(element, null, options));
 }
 
+const limiters = {
+	default: new Bottleneck(),
+};
+
+function getLimiterValue(prop, options, hostname) {
+	if (options[prop] !== undefined) {
+		return options[prop];
+	}
+
+	if (options.limits[hostname]?.enable !== false && options.limits[hostname]?.[prop] !== undefined) {
+		return options.limits[hostname][prop];
+	}
+
+	return options.limits.default[prop];
+}
+
+function getLimiter(url, options) {
+	const { hostname } = new URL(url);
+
+	const interval = getLimiterValue('interval', options, hostname);
+	const concurrency = getLimiterValue('concurrency', options, hostname);
+
+	if (!limiters[interval]?.[concurrency]) {
+		limiters[interval] = limiters[interval] || {};
+
+		limiters[interval][concurrency] = new Bottleneck({
+			minTime: interval,
+			maxConcurrent: concurrency,
+			timeout: options.timeout + 10000, // timeout 10 seconds after axious should
+		});
+	}
+
+	return limiters[interval][concurrency];
+}
+
 async function request(url, body, customOptions = {}, method = 'GET') {
 	const options = merge.all([{
 		timeout: 1000,
@@ -867,7 +911,9 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		url,
 	}, globalOptions, customOptions]);
 
-	const res = await axios({
+	const limiter = getLimiter(url, options);
+
+	const res = await limiter.schedule(async () => axios({
 		url,
 		method,
 		data: body,
@@ -877,7 +923,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		signal: options.abortSignal,
 		httpAgent: options.httpAgent || new http.Agent({ ...options.agent }),
 		httpsAgent: options.httpsAgent || new https.Agent({ ...options.agent }),
-	});
+	}));
 
 	if (!(res.status >= 200 && res.status < 300)) {
 		handleError(new Error(`HTTP response from ${url} not OK (${res.status} ${res.statusText}): ${res.data}`), 'HTTP_NOT_OK');

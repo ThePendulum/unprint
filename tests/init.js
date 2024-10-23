@@ -10,7 +10,15 @@ const data = require('./data.json');
 const port = process.env.PORT || 3101;
 
 async function initTest() {
-	unprint.options({ headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36' } });
+	unprint.options({
+		headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36' },
+		limits: {
+			default: {
+				concurrency: 1,
+				interval: 100,
+			},
+		},
+	});
 
 	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body' });
 	// const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);

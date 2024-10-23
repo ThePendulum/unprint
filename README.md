@@ -13,6 +13,17 @@ unprint.options({
 	headers: {
 		'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
 	},
+	limits: { // request throttling
+		default: {
+			concurrency: 10,
+			interval: 10, // ms
+		},
+		[hostname]: {
+			enable: true, // enabled by default
+			concurrency: 1,
+			interval: 1000,
+		},
+	},
 })
 ```
 
