@@ -20,6 +20,11 @@ async function initTest() {
 		},
 	});
 
+	unprint.on('requestInit', (initData) => console.log('init', initData));
+	unprint.on('requestError', (errorData) => console.error('error', errorData));
+	unprint.on('requestSuccess', (successData) => console.log('success', successData));
+	unprint.on('query', (queryData) => console.log('query', queryData));
+
 	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body' });
 	// const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
 	// const errorRes = await unprint.get(`http://127.0.0.1:${port}/error/404`);

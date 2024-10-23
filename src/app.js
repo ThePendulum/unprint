@@ -1,10 +1,11 @@
 'use strict';
 
 const { JSDOM, VirtualConsole } = require('jsdom');
-const Bottleneck = require('bottleneck');
+const EventEmitter = require('events');
 const http = require('http');
 const https = require('https');
 const axios = require('axios').default;
+const Bottleneck = require('bottleneck');
 const moment = require('moment-timezone');
 const merge = require('deepmerge');
 
@@ -26,6 +27,8 @@ const { window: globalWindow } = new JSDOM('', { virtualConsole });
 let globalOptions = {
 	...settings,
 };
+
+const events = new EventEmitter();
 
 function configure(newOptions) {
 	globalOptions = merge(globalOptions, newOptions);
@@ -782,19 +785,39 @@ function isDomObject(element) {
 
 function initQueryFns(fns, context) {
 	if (context) {
-		return Object.fromEntries(Object.entries(fns).map(([key, fn]) => [key, (...args) => fn(context, ...args)]));
+		return Object.fromEntries(Object.entries(fns).map(([key, fn]) => [key, (...args) => {
+			events.emit('query', {
+				key,
+				args,
+				origin: context.options.origin,
+			});
+
+			return fn(context, ...args);
+		}]));
 	}
 
 	// context is passed directly to query method
 	return Object.fromEntries(Object.entries(fns).map(([key, fn]) => [key, (...args) => {
 		// first argument is already an unprint context. this seems like a convoluted approach, but there is little reason not to allow it
 		if (args[0]?.isUnprint) {
+			events.emit('query', {
+				key,
+				args,
+				origin: context.options.origin,
+			});
+
 			return fn(...args);
 		}
 
 		// most common usage is to pass an element directly, convert to context
 		if (isDomObject(args[0])) {
 			const element = args[0];
+
+			events.emit('query', {
+				key,
+				args,
+				origin: context.options.origin,
+			});
 
 			return fn({
 				element,
@@ -901,7 +924,10 @@ function getLimiter(url, options) {
 		});
 	}
 
-	return limiters[interval][concurrency];
+	return {
+		limiter: limiters[interval][concurrency],
+		interval: concurrency,
+	};
 }
 
 async function request(url, body, customOptions = {}, method = 'GET') {
@@ -911,7 +937,17 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		url,
 	}, globalOptions, customOptions]);
 
-	const limiter = getLimiter(url, options);
+	const { limiter, interval, concurrency } = getLimiter(url, options);
+
+	const feedbackBase = {
+		url,
+		method,
+		interval,
+		concurrency,
+		options,
+	};
+
+	events.emit('requestInit', feedbackBase);
 
 	const res = await limiter.schedule(async () => axios({
 		url,
@@ -927,6 +963,12 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 
 	if (!(res.status >= 200 && res.status < 300)) {
 		handleError(new Error(`HTTP response from ${url} not OK (${res.status} ${res.statusText}): ${res.data}`), 'HTTP_NOT_OK');
+
+		events.emit('requestError', {
+			...feedbackBase,
+			status: res.status,
+			statusText: res.statusText,
+		});
 
 		return {
 			ok: false,
@@ -944,6 +986,12 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		response: res,
 		res,
 	};
+
+	events.emit('requestSuccess', {
+		...feedbackBase,
+		status: res.status,
+		statusText: res.statusText,
+	});
 
 	if (res.headers['content-type'].includes('application/json') && typeof res.data === 'object') {
 		return {
@@ -979,8 +1027,19 @@ async function post(url, body, options) {
 	return request(url, body, options, 'POST');
 }
 
+function on(trigger, fn) {
+	events.on(trigger, fn);
+}
+
+function off(trigger, fn) {
+	events.off(trigger, fn);
+}
+
 module.exports = {
 	configure,
+	on,
+	off,
+	events,
 	get,
 	post,
 	request,
