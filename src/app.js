@@ -803,7 +803,6 @@ function initQueryFns(fns, context) {
 			events.emit('query', {
 				key,
 				args,
-				origin: context.options.origin,
 			});
 
 			return fn(...args);
@@ -816,7 +815,6 @@ function initQueryFns(fns, context) {
 			events.emit('query', {
 				key,
 				args,
-				origin: context.options.origin,
 			});
 
 			return fn({
