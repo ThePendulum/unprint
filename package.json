@@ -28,6 +28,7 @@
     "eslint": "^8.17.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-base": "^15.0.0",
+    "https-proxy-agent": "^7.0.5",
     "jsdom": "^17.0.0",
     "moment-timezone": "^0.5.34"
   },

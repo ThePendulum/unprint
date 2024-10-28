@@ -5,6 +5,7 @@ const EventEmitter = require('events');
 const http = require('http');
 const https = require('https');
 const axios = require('axios').default;
+const { HttpsProxyAgent } = require('https-proxy-agent');
 const Bottleneck = require('bottleneck');
 const moment = require('moment-timezone');
 const merge = require('deepmerge');
@@ -948,17 +949,31 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 
 	events.emit('requestInit', feedbackBase);
 
-	const res = await limiter.schedule(async () => axios({
-		url,
-		method,
+	const instance = axios.create({
 		data: body,
 		validateStatus: null,
-		...options,
+		headers: options.headers,
 		timeout: options.timeout,
 		signal: options.abortSignal,
-		httpAgent: options.httpAgent || new http.Agent({ ...options.agent }),
-		httpsAgent: options.httpsAgent || new https.Agent({ ...options.agent }),
-	}));
+		// ...options,
+		// httpAgent: options.httpAgent || new http.Agent({ ...options.agent }),
+	});
+
+	if (options.proxy) {
+		// instance.defaults.httpAgent = new HttpsProxyAgent(`http://${options.proxy.host}:${options.proxy.port}`, { ...options.agent });
+		instance.defaults.httpsAgent = options.httpsAgent || new HttpsProxyAgent(`http://${options.proxy.host}:${options.proxy.port}`, { ...options.agent });
+
+		instance.defaults.proxy = {
+			protocol: 'http',
+			host: options.proxy.host,
+			port: options.proxy.port,
+		};
+	} else {
+		instance.defaults.httpAgent = options.httpsAgent || new http.Agent({ ...options.agent });
+		instance.defaults.httpsAgent = options.httpsAgent || new https.Agent({ ...options.agent });
+	}
+
+	const res = await limiter.schedule(async () => instance.get(url));
 
 	if (!(res.status >= 200 && res.status < 300)) {
 		handleError(new Error(`HTTP response from ${url} not OK (${res.status} ${res.statusText}): ${res.data}`), 'HTTP_NOT_OK');

@@ -18,6 +18,12 @@ async function initTest() {
 				interval: 100,
 			},
 		},
+		/*
+		proxy: {
+			host: '192.168.178.25',
+			port: 8888,
+		},
+		*/
 	});
 
 	unprint.on('requestInit', (initData) => console.log('init', initData));
