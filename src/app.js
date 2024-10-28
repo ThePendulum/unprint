@@ -4,8 +4,8 @@ const { JSDOM, VirtualConsole } = require('jsdom');
 const EventEmitter = require('events');
 const http = require('http');
 const https = require('https');
+const tunnel = require('tunnel');
 const axios = require('axios').default;
-const { HttpsProxyAgent } = require('https-proxy-agent');
 const Bottleneck = require('bottleneck');
 const moment = require('moment-timezone');
 const merge = require('deepmerge');
@@ -960,14 +960,15 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 	});
 
 	if (options.proxy) {
-		// instance.defaults.httpAgent = new HttpsProxyAgent(`http://${options.proxy.host}:${options.proxy.port}`, { ...options.agent });
-		instance.defaults.httpsAgent = options.httpsAgent || new HttpsProxyAgent(`http://${options.proxy.host}:${options.proxy.port}`, { ...options.agent });
+		const proxyAgent = tunnel.httpsOverHttp({
+			proxy: {
+				host: options.proxy.host,
+				port: options.proxy.port,
+			},
+		});
 
-		instance.defaults.proxy = {
-			protocol: 'http',
-			host: options.proxy.host,
-			port: options.proxy.port,
-		};
+		instance.defaults.httpAgent = proxyAgent;
+		instance.defaults.httpsAgent = proxyAgent;
 	} else {
 		instance.defaults.httpAgent = options.httpsAgent || new http.Agent({ ...options.agent });
 		instance.defaults.httpsAgent = options.httpsAgent || new https.Agent({ ...options.agent });
