@@ -209,9 +209,24 @@ Returns
 
 ### Proxy
 ```javascript
-unprint.get({ // or unprint.options();
-	host: '127.0.0.1',
-	port: 8888,
+unprint.options({ // or unprint.options();
+	proxy: {
+		enable: true,
+		use: false, // don't use for all requests by default
+		host: '127.0.0.1',
+		port: 8888,
+		hostnames: [
+			'www.google.com',
+			'www.example.com',
+		],
+	}
+});
+
+unprint.get({
+	proxy: {
+		use: true, // use proxy for this request
+		// all other proxy options can be supplied here
+	},
 });
 ```
 

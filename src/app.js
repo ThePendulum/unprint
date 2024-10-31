@@ -930,6 +930,34 @@ function getLimiter(url, options) {
 	};
 }
 
+/* eslint-disable no-param-reassign */
+function setProxy(instance, options, url) {
+	const { hostname } = new URL(url);
+
+	if (options.proxy
+		&& options.proxy.enable !== false
+		&& options.proxy.use !== false // use is a local override for enable
+		&& (options.proxy.use
+		|| options.proxy.hostnames?.includes(hostname))
+	) {
+		const proxyAgent = tunnel.httpsOverHttp({
+			proxy: {
+				host: options.proxy.host,
+				port: options.proxy.port,
+			},
+		});
+
+		instance.defaults.httpAgent = proxyAgent;
+		instance.defaults.httpsAgent = proxyAgent;
+
+		return;
+	}
+
+	instance.defaults.httpAgent = options.httpsAgent || new http.Agent({ ...options.agent });
+	instance.defaults.httpsAgent = options.httpsAgent || new https.Agent({ ...options.agent });
+}
+/* eslint-enable no-param-reassign */
+
 async function request(url, body, customOptions = {}, method = 'GET') {
 	const options = merge.all([{
 		timeout: 1000,
@@ -959,20 +987,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		// httpAgent: options.httpAgent || new http.Agent({ ...options.agent }),
 	});
 
-	if (options.proxy) {
-		const proxyAgent = tunnel.httpsOverHttp({
-			proxy: {
-				host: options.proxy.host,
-				port: options.proxy.port,
-			},
-		});
-
-		instance.defaults.httpAgent = proxyAgent;
-		instance.defaults.httpsAgent = proxyAgent;
-	} else {
-		instance.defaults.httpAgent = options.httpsAgent || new http.Agent({ ...options.agent });
-		instance.defaults.httpsAgent = options.httpsAgent || new https.Agent({ ...options.agent });
-	}
+	setProxy(instance, options, url);
 
 	const res = await limiter.schedule(async () => instance.get(url));
 
