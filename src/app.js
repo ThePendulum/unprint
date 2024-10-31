@@ -950,11 +950,13 @@ function setProxy(instance, options, url) {
 		instance.defaults.httpAgent = proxyAgent;
 		instance.defaults.httpsAgent = proxyAgent;
 
-		return;
+		return true;
 	}
 
 	instance.defaults.httpAgent = options.httpsAgent || new http.Agent({ ...options.agent });
 	instance.defaults.httpsAgent = options.httpsAgent || new https.Agent({ ...options.agent });
+
+	return false;
 }
 /* eslint-enable no-param-reassign */
 
@@ -967,16 +969,6 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
-	const feedbackBase = {
-		url,
-		method,
-		interval,
-		concurrency,
-		options,
-	};
-
-	events.emit('requestInit', feedbackBase);
-
 	const instance = axios.create({
 		data: body,
 		validateStatus: null,
@@ -987,7 +979,18 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		// httpAgent: options.httpAgent || new http.Agent({ ...options.agent }),
 	});
 
-	setProxy(instance, options, url);
+	const isProxied = setProxy(instance, options, url);
+
+	const feedbackBase = {
+		url,
+		method,
+		interval,
+		concurrency,
+		isProxied,
+		options,
+	};
+
+	events.emit('requestInit', feedbackBase);
 
 	const res = await limiter.schedule(async () => instance.get(url));
 
