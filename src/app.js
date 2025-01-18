@@ -523,6 +523,8 @@ function queryStyle(context, selector, customOptions) {
 			removeStyleFunctionSpaces(element, options);
 		}
 
+		console.log('OPTIONS', options.styleAttribute);
+
 		if (element.style) {
 			return options.styleAttribute
 				? element.style.getPropertyValue(options.styleAttribute)
@@ -552,6 +554,45 @@ function queryStyles(context, selector, customOptions) {
 	});
 
 	return elStyles.filter(Boolean);
+}
+
+function queryStyleUrl(context, selector, styleAttribute, customOptions) {
+	const options = {
+		styleAttribute,
+		...customOptions,
+	};
+
+	const style = queryStyle(context, selector, options);
+
+	if (!style) {
+		return null;
+	}
+
+	console.log('STYLE', styleAttribute, style);
+
+	const url = style.match(/url\(['"]?(.*)['"]?\)/)?.[1];
+
+	return url;
+}
+
+function queryStyleUrls(context, selector, styleAttribute, customOptions) {
+	const options = {
+		styleAttribute,
+		...customOptions,
+	};
+
+	const styles = queryStyles(context, selector, options);
+	const urls = styles.map((style) => style.match(/url\(['"]?(.*)['"]?\)/)?.[1])?.filter(Boolean);
+
+	return urls;
+}
+
+function queryBackground(context, selector, customOptions) {
+	return queryStyleUrl(context, selector, 'background-image', customOptions);
+}
+
+function queryBackgrounds(context, selector, customOptions) {
+	return queryStyleUrls(context, selector, 'background-image', customOptions);
 }
 
 function queryVideo(context, selector = 'video source', customOptions) {
@@ -738,6 +779,8 @@ const queryFns = {
 	attributes: queryAttributes,
 	attr: queryAttribute,
 	attrs: queryAttributes,
+	background: queryBackground,
+	backgrounds: queryBackgrounds,
 	dataset: queryDataset,
 	datasets: queryDatasets,
 	data: queryDataset,
@@ -754,6 +797,8 @@ const queryFns = {
 	jsons: queryJsons,
 	style: queryStyle,
 	styles: queryStyles,
+	styleUrl: queryStyleUrl,
+	styleUrls: queryStyleUrls,
 	number: queryNumber,
 	num: queryNumber,
 	numbers: queryNumbers,

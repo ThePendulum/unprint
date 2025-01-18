@@ -181,6 +181,19 @@ Options
 
 Returns the CSS style attributes of an element as an object.
 
+#### Query style URL
+`query.styleUrl([selector], [styleAttribute], [options])`
+
+Extracts the CSS `url()` link from a style attribute, such as a background.
+
+Arguments
+* `styleAttribute`: the CSS style attribute to extract the URL from
+
+#### Query style background
+`query.styleUrl([selector], [options])`
+
+Extracts the CSS `url()` background from a style attribute. Alias for `query.styleUrl([selector], 'background-image', [options])`.
+
 ### HTTP request
 * `unprint.get(url, [options])`
 * `unprint.post(url, body, [options])`

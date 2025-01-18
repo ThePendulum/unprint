@@ -28,7 +28,7 @@ async function initTest() {
 	unprint.on('requestInit', (initData) => console.log('init', initData));
 	unprint.on('requestError', (errorData) => console.error('error', errorData));
 	unprint.on('requestSuccess', (successData) => console.log('success', successData));
-	unprint.on('query', (queryData) => console.log('query', queryData));
+	// unprint.on('query', (queryData) => console.log('query', queryData));
 
 	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body' });
 	// const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
@@ -60,6 +60,10 @@ async function initTest() {
 	console.log('style background', res.context.query.style('.background'));
 	console.log('styles', res.context.query.styles('.style'));
 	console.log('styles color', res.context.query.styles('.style', { styleAttribute: 'color' }));
+	console.log('style url', res.context.query.styleUrl('.background', 'background-image'));
+	console.log('style urls', res.context.query.styleUrls('.background', 'background-image'));
+	console.log('background', res.context.query.background('.background'));
+	console.log('backgrounds', res.context.query.backgrounds('.background'));
 	console.log('path', res.context.query.url('#path'));
 	console.log('relative path', res.context.query.url('#relativePath'));
 	console.log('exists', res.context.query.exists('#title'));
