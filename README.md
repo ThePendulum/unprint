@@ -189,8 +189,8 @@ Extracts the CSS `url()` link from a style attribute, such as a background.
 Arguments
 * `styleAttribute`: the CSS style attribute to extract the URL from
 
-#### Query style background
-`query.styleUrl([selector], [options])`
+#### Query style background URL
+`query.background([selector], [options])`
 
 Extracts the CSS `url()` background from a style attribute. Alias for `query.styleUrl([selector], 'background-image', [options])`.
 
