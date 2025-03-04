@@ -1015,6 +1015,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
 	const instance = axios.create({
+		method,
 		data: body,
 		validateStatus: null,
 		headers: options.headers,
@@ -1037,7 +1038,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 
 	events.emit('requestInit', feedbackBase);
 
-	const res = await limiter.schedule(async () => instance.get(url));
+	const res = await limiter.schedule(async () => instance.request(url));
 
 	if (!(res.status >= 200 && res.status < 300)) {
 		handleError(new Error(`HTTP response from ${url} not OK (${res.status} ${res.statusText}): ${res.data}`), 'HTTP_NOT_OK');
