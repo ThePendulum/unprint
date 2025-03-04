@@ -1053,6 +1053,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 			ok: false,
 			status: res.status,
 			statusText: res.statusText,
+			headers: res.headers,
 			response: res,
 			res,
 		};
@@ -1062,6 +1063,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		ok: true,
 		status: res.status,
 		statusText: res.statusText,
+		headers: res.headers,
 		response: res,
 		res,
 	};
