@@ -568,8 +568,6 @@ function queryStyleUrl(context, selector, styleAttribute, customOptions) {
 		return null;
 	}
 
-	console.log('STYLE', styleAttribute, style);
-
 	const url = style.match(/url\(['"]?(.*)['"]?\)/)?.[1];
 
 	return url;
@@ -1074,7 +1072,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		statusText: res.statusText,
 	});
 
-	if (res.headers['content-type'].includes('application/json') && typeof res.data === 'object') {
+	if (['application/json', 'application/javascript'].includes(res.headers['content-type']) && typeof res.data === 'object') {
 		return {
 			...base,
 			data: res.data,
