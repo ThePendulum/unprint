@@ -523,8 +523,6 @@ function queryStyle(context, selector, customOptions) {
 			removeStyleFunctionSpaces(element, options);
 		}
 
-		console.log('OPTIONS', options.styleAttribute);
-
 		if (element.style) {
 			return options.styleAttribute
 				? element.style.getPropertyValue(options.styleAttribute)
@@ -1074,7 +1072,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		statusText: res.statusText,
 	});
 
-	if (['application/json', 'application/javascript'].includes(res.headers['content-type']) && typeof res.data === 'object') {
+	if (['application/json', 'application/javascript'].some((type) => res.headers['content-type'].includes(type)) && typeof res.data === 'object') {
 		return {
 			...base,
 			data: res.data,
