@@ -454,9 +454,9 @@ function extractSourceSet(sourceSet, customOptions) {
 	}
 
 	const sources = sourceSet
-		.split(/\s*,\s*/)
+		.split(/\s*,\s+/)
 		.map((source) => {
-			const [link, descriptor] = source.split(' ');
+			const [link, descriptor] = source.trim().split(' ');
 
 			if (link) {
 				return {
