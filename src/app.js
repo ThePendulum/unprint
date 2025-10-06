@@ -176,7 +176,12 @@ function queryContent(context, selector, customOptions) {
 }
 
 function queryContents(context, selector, customOptions) {
-	const options = { ...context.options, ...customOptions };
+	const options = {
+		...context.options,
+		trim: true,
+		...customOptions,
+	};
+
 	const targets = queryElements(context, selector, options);
 
 	return targets.map((target) => extractContent(target, options)).filter(Boolean);
