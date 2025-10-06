@@ -9,6 +9,7 @@ const axios = require('axios').default;
 const Bottleneck = require('bottleneck');
 const moment = require('moment-timezone');
 const merge = require('deepmerge');
+const srcset = require('srcset');
 
 const settings = {
 	throwErrors: false,
@@ -448,20 +449,34 @@ function queryImages(context, selector = 'img', customOptions) {
 	return imageUrls.map((imageUrl) => prefixUrl(imageUrl, options.origin, options));
 }
 
+function getSourceSetDescriptor(source) {
+	if (source.width) {
+		return `${source.width}w`;
+	}
+
+	if (source.height) {
+		return `${source.height}w`;
+	}
+
+	if (source.density) {
+		return `${source.density}x`;
+	}
+
+	return 'fallback';
+}
+
 function extractSourceSet(sourceSet, customOptions) {
 	if (!sourceSet) {
 		return null;
 	}
 
-	const sources = sourceSet
-		.split(/\s*,\s+/)
+	const sources = srcset.parse(sourceSet)
 		.map((source) => {
-			const [link, descriptor] = source.trim().split(' ');
-
-			if (link) {
+			if (source.url) {
 				return {
-					descriptor: descriptor || 'fallback',
-					url: prefixUrl(link, customOptions.origin, customOptions.protocol),
+					...source,
+					descriptor: getSourceSetDescriptor(source),
+					url: prefixUrl(source.url, customOptions.origin, customOptions.protocol),
 				};
 			}
 
@@ -469,11 +484,27 @@ function extractSourceSet(sourceSet, customOptions) {
 		})
 		.filter(Boolean)
 		.sort((sourceA, sourceB) => {
-			if (sourceB.descriptor === 'fallback' || parseInt(sourceA.descriptor, 10) > parseInt(sourceB.descriptor, 10)) {
+			if (customOptions.sort === false) {
+				return 0;
+			}
+
+			if (sourceB.description === 'fallback') {
 				return -1;
 			}
 
-			if (parseInt(sourceA.descriptor, 10) < parseInt(sourceB.descriptor, 10)) {
+			if (sourceA.width && sourceB.width && sourceA.width > sourceB.width) {
+				return -1;
+			}
+
+			if (sourceA.height && sourceB.height && sourceA.height > sourceB.height) {
+				return -1;
+			}
+
+			if (sourceA.width && sourceB.width && sourceA.width < sourceB.width) {
+				return 1;
+			}
+
+			if (sourceA.height && sourceB.height && sourceA.height < sourceB.height) {
 				return 1;
 			}
 
@@ -482,7 +513,7 @@ function extractSourceSet(sourceSet, customOptions) {
 
 	if (customOptions.includeDescriptor) {
 		return sources.map((source) => ({
-			descriptor: source.descriptor,
+			...source,
 			url: prefixUrl(source.url),
 		}));
 	}
