@@ -47,6 +47,7 @@ async function initTest() {
 	console.log('number indexed', res.context.query.number('.number', { match: /(\d+)/, matchIndex: 1 }));
 	console.log('data', res.context.query.json('#json'));
 	console.log('items', res.context.query.contents('.item'));
+	console.log('items css xpath array', res.context.query.contents(['.item', '//li[contains(@class, "number")]']));
 	console.log('link', res.context.query.url('#link'));
 	console.log('links', res.context.query.urls('.link'));
 	console.log('text', res.context.query.text('.text'));

@@ -59,6 +59,9 @@ The selector can be a CSS selector, an XPath selector starting with `/` or `(`, 
 #### Querying multiple elements
 Most methods can be used in plural, returning an array of results, i.e. `query.elements()`, `query.dates()`.
 
+Options
+* `filterDuplicates`: When an array of selectors results in the same element being selected multiple times, ensure each element is only returned once, default `true`.
+
 #### Query an element
 * `query.element([selector], [options])`
 

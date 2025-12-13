@@ -102,14 +102,20 @@ function queryElement(context, selectors, _customOptions) {
 	return target || null;
 }
 
-function queryElements(context, selectors, _customOptions) {
+function queryElements(context, selectors, customOptions = {}) {
 	if (!selectors) {
 		return context.element;
 	}
 
-	const targets = [].concat(selectors).reduce((acc, selector) => acc || getElements(context, selector, false), null);
+	const options = customOptions;
+	const targets = [].concat(selectors).reduce((acc, selector) => acc.concat(getElements(context, selector, false)), []).filter(Boolean);
 
-	return targets || [];
+	if (options.filterDuplicates === false) {
+		return targets || [];
+	}
+
+	// findIndex always finds first index, if current index is not the first index, it's a dupe
+	return targets.filter((target, index, array) => index === array.findIndex((dupe) => target === dupe));
 }
 
 function queryExistence(context, selector, customOptions) {
