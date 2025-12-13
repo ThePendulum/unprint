@@ -74,9 +74,9 @@ function getElements(context, selector, firstOnly = false) {
 		return context.element;
 	}
 
-	if (/^\//.test(selector)) {
-		// XPath selector
-		const iterator = globalWindow.document.evaluate(`.${selector}`, context.element, null, globalWindow.XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+	if (selector.startsWith('/') || selector.startsWith('(')) {
+		// XPath selector, . prefix ensures selector is relative to current node, won't work for deeper selections
+		const iterator = globalWindow.document.evaluate(selector.replace(/^\//, './').replace(/^\(\//, '(./'), context.element, null, globalWindow.XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
 
 		if (firstOnly) {
 			return iterator.iterateNext();
