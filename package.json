@@ -3,9 +3,7 @@
   "version": "0.16.1",
   "description": "Simplify common web scraping tasks while staying in control of the data.",
   "main": "src/app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ThePendulum/unprint.git"
@@ -30,10 +28,13 @@
     "eslint-config-airbnb-base": "^15.0.0",
     "jsdom": "^17.0.0",
     "moment-timezone": "^0.5.34",
+    "patchright": "^1.56.1",
     "srcset": "^4.0.0",
     "tunnel": "^0.0.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.0",
     "express": "^4.18.1"
   }
 }

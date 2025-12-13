@@ -1,6 +1,7 @@
 'use strict';
 
 const { JSDOM, VirtualConsole } = require('jsdom');
+const { chromium } = require('patchright');
 const EventEmitter = require('events');
 const http = require('http');
 const https = require('https');
@@ -1035,7 +1036,151 @@ function setProxy(instance, options, url) {
 
 	return false;
 }
+
+const clients = new Map();
+
 /* eslint-enable no-param-reassign */
+async function getBrowserInstance(scope) {
+	if (clients.has(scope)) {
+		console.log('REUSE', scope);
+		return clients.get(scope);
+	}
+
+	const browser = await chromium.launch({
+		headless: false,
+	});
+
+	const context = await browser.newContext({
+		userAgent: 'unprint',
+	});
+
+	const client = { context, browser };
+
+	clients.set(scope, client);
+
+	return client;
+}
+
+async function closeAllBrowsers() {
+	console.log(Array.from(clients.values()));
+	await Promise.all(Array.from(clients.values()).map(async (client) => client.browser.close()));
+}
+
+function curateResponse(res, options, { url, customOptions }) {
+	const base = {
+		ok: true,
+		status: res.status,
+		statusText: res.statusText,
+		headers: res.headers,
+		response: res,
+		res,
+	};
+
+	if (['application/json', 'application/javascript'].some((type) => res.headers['content-type']?.includes(type)) && typeof res.data === 'object') {
+		return {
+			...base,
+			data: res.data,
+		};
+	}
+
+	if (!options.extract) {
+		return base;
+	}
+
+	const contextOptions = {
+		...customOptions,
+		origin: url,
+	};
+
+	const context = options.selectAll
+		? initAll(res.data, options.selectAll, contextOptions)
+		: init(res.data, options.select, contextOptions);
+
+	return {
+		...base,
+		context,
+	};
+}
+
+async function browserRequest(url, customOptions = {}) {
+	const options = merge.all([{
+		timeout: 1000,
+		extract: true,
+		scope: 'main',
+		url,
+	}, globalOptions, customOptions]);
+
+	/*
+	const browser = await chromium.launch({
+		...options,
+	});
+	*/
+
+	const { limiter, interval, concurrency } = getLimiter(url, options);
+
+	const feedbackBase = {
+		url,
+		method: 'get',
+		interval,
+		concurrency,
+		isProxied: false,
+		options,
+	};
+
+	return limiter.schedule(async () => {
+		const { context, browser } = await getBrowserInstance(options.scope);
+		const page = await context.newPage();
+
+		const res = await page.goto(url, {
+			...options.browser,
+		});
+
+		const status = res.status();
+		const statusText = res.statusText();
+		const headers = await res.allHeaders();
+
+		if (!(status >= 200 && status < 300)) {
+			handleError(new Error(`HTTP response from ${url} not OK (${status} ${statusText}): ${res.data}`), 'HTTP_NOT_OK');
+
+			events.emit('requestError', {
+				...feedbackBase,
+				status,
+				statusText,
+			});
+
+			return {
+				ok: false,
+				status,
+				statusText,
+				headers,
+				response: res,
+				res,
+			};
+		}
+
+		events.emit('requestSuccess', feedbackBase);
+
+		await page.waitForLoadState();
+
+		if (customOptions.control) {
+			await customOptions.control(page, { context, browser });
+		}
+
+		events.emit('controlSuccess', feedbackBase);
+
+		const data = await page.content();
+
+		await page.close();
+		// await browser.close();
+
+		return curateResponse({
+			data,
+			status,
+			statusText,
+			headers,
+		}, options, { url, customOptions });
+	});
+}
 
 async function request(url, body, customOptions = {}, method = 'GET') {
 	const options = merge.all([{
@@ -1093,45 +1238,13 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		};
 	}
 
-	const base = {
-		ok: true,
-		status: res.status,
-		statusText: res.statusText,
-		headers: res.headers,
-		response: res,
-		res,
-	};
-
 	events.emit('requestSuccess', {
 		...feedbackBase,
 		status: res.status,
 		statusText: res.statusText,
 	});
 
-	if (['application/json', 'application/javascript'].some((type) => res.headers['content-type'].includes(type)) && typeof res.data === 'object') {
-		return {
-			...base,
-			data: res.data,
-		};
-	}
-
-	if (!options.extract) {
-		return base;
-	}
-
-	const contextOptions = {
-		...customOptions,
-		origin: url,
-	};
-
-	const context = options.selectAll
-		? initAll(res.data, options.selectAll, contextOptions)
-		: init(res.data, options.select, contextOptions);
-
-	return {
-		...base,
-		context,
-	};
+	return curateResponse(res, options, { url, customOptions });
 }
 
 async function get(url, options) {
@@ -1158,6 +1271,9 @@ module.exports = {
 	get,
 	post,
 	request,
+	browserRequest,
+	browser: browserRequest,
+	closeAllBrowsers,
 	initialize: init,
 	initializeAll: initAll,
 	init,
