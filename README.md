@@ -239,6 +239,7 @@ Returns
 	ok,					// (boolean)	status code >= 200 and < 300
 	response,			// (object)		the original axios response object, alias 'res'
 	res,				// (object)		alias for 'response'
+	control,			//				return value from browser control function
 }
 ```
 

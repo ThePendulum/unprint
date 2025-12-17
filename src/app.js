@@ -1074,7 +1074,7 @@ async function closeAllBrowsers() {
 	await Promise.all(Array.from(clients.values()).map(async (client) => client.browser.close()));
 }
 
-function curateResponse(res, options, { url, customOptions }) {
+function curateResponse(res, options, { url, control, customOptions }) {
 	const base = {
 		ok: true,
 		status: res.status,
@@ -1082,6 +1082,7 @@ function curateResponse(res, options, { url, customOptions }) {
 		headers: res.headers,
 		response: res,
 		res,
+		control,
 	};
 
 	if (['application/json', 'application/javascript'].some((type) => res.headers['content-type']?.includes(type)) && typeof res.data === 'object') {
@@ -1164,8 +1165,10 @@ async function browserRequest(url, customOptions = {}) {
 
 		await page.waitForLoadState();
 
+		let control = null;
+
 		if (customOptions.control) {
-			await customOptions.control(page, { context, browser });
+			control = await customOptions.control(page, { context, browser });
 		}
 
 		events.emit('controlSuccess', feedbackBase);
@@ -1184,7 +1187,11 @@ async function browserRequest(url, customOptions = {}) {
 			status,
 			statusText,
 			headers,
-		}, options, { url, customOptions });
+		}, options, {
+			url,
+			customOptions,
+			control,
+		});
 	});
 }
 

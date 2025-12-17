@@ -8,7 +8,6 @@ async function initTest() {
 			browser: {
 				headless: false,
 			},
-			scope: null,
 			async control(_page) {
 				//
 			},
@@ -22,7 +21,6 @@ async function initTest() {
 				browser: {
 					headless: false,
 				},
-				scope: null,
 				async control(_page) {
 					//
 				},
@@ -34,13 +32,14 @@ async function initTest() {
 	// await unprint.browser('https://www.scrapingcourse.com/', {
 		headless: false,
 		async control(_page) {
-			//
+			return 'test';
 		},
 	});
 
 	const cards = res.context.query.contents('h2');
 
 	console.log('CARD TITLES', cards);
+	console.log('CONTROL OUT', res.control);
 
 	await unprint.closeAllBrowsers();
 }
