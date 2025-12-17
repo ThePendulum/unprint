@@ -210,10 +210,11 @@ Options
 
 Use Playwright with Chromium (experimental)
 * `unprint.browserRequest(url, [options])`
-* `unprint.closeAllBrowsers()`
+* `unprint.closeAllBrowsers()`: Close reused browser instances.
 
 Additional options
-* `scope`: Browser instance to (re)use, default `main`.
+* `control`: Async function to interface with Playwright page passed as argument
+* `scope`: Browser instance to (re)use, set to `null` to force new scope every request, default `main`.
 * `browser`: Options object passed to Playwright's `launch`, requires new scope.
 * `browser.headless`: Headless mode, set to `false` to launch visible browser, default `true`.
 * `context`: Options object passed to Playwright's `newContext`, requires new scope.

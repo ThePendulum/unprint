@@ -5,7 +5,10 @@ const unprint = require('../src/app');
 async function initTest() {
 	await Promise.all([
 		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=5000', {
-			headless: false,
+			browser: {
+				headless: false,
+			},
+			scope: null,
 			async control(_page) {
 				//
 			},
@@ -16,7 +19,10 @@ async function initTest() {
 			}, 1000);
 		}).then(async () => {
 			await unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=2000', {
-				headless: false,
+				browser: {
+					headless: false,
+				},
+				scope: null,
 				async control(_page) {
 					//
 				},

@@ -1063,7 +1063,9 @@ async function getBrowserInstance(scope, options) {
 
 	const client = { context, browser };
 
-	clients.set(scope, client);
+	if (scope) {
+		clients.set(scope, client);
+	}
 
 	return client;
 }
@@ -1171,7 +1173,11 @@ async function browserRequest(url, customOptions = {}) {
 		const data = await page.content();
 
 		await page.close();
-		// await browser.close();
+
+		if (options.scope === null) {
+			// this browser won't be reused
+			await browser.close();
+		}
 
 		return curateResponse({
 			data,
