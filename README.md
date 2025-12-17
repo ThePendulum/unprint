@@ -52,10 +52,15 @@ query.element('h1#title'); // HTMLHeadingElement
 **From here on, the query methods will be described in their initialized form.** The API for the *uninitialized* methods is identical, except for the element passed as the first argument
 
 #### Selector
-The selector can be a CSS selector, an XPath selector starting with `/`, or an array of either or both acting as fallbacks. If the selector is falsy, the input element will be used.
+The selector can be a CSS selector, an XPath selector starting with `/` or `(`, or an array of either or both acting as fallbacks. If the selector is falsy, the input element will be used.
+
+* XPath Caveat: `//` and `(//` at the *start* of the selector are converted to `.//` and `(.//` for more intuitive relative selection, but any consecutive `//` will be absolute.
 
 #### Querying multiple elements
 Most methods can be used in plural, returning an array of results, i.e. `query.elements()`, `query.dates()`.
+
+Options
+* `filterDuplicates`: When an array of selectors results in the same element being selected multiple times, ensure each element is only returned once, default `true`.
 
 #### Query an element
 * `query.element([selector], [options])`

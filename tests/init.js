@@ -37,6 +37,7 @@ async function initTest() {
 	console.log('title', res.context.query.content('//*[contains(text(), "Test")]'));
 	console.log('date', res.context.query.date('#date', 'DD-MM-YYYY HH:mm'));
 	console.log('date xpath', res.context.query.date('//div[contains(text(), "Today:")]', 'MMM DD, YYYY'));
+	console.log('date grouped xpath', res.context.query.date('(//div[contains(text(), "Today:")])', 'MMM DD, YYYY'));
 	console.log('duration', res.context.query.duration('#duration'));
 	console.log('timestamp', res.context.query.duration('#timestamp'));
 	console.log('timestring', res.context.query.duration('#timestring'));
@@ -46,6 +47,7 @@ async function initTest() {
 	console.log('number indexed', res.context.query.number('.number', { match: /(\d+)/, matchIndex: 1 }));
 	console.log('data', res.context.query.json('#json'));
 	console.log('items', res.context.query.contents('.item'));
+	console.log('items css xpath array', res.context.query.contents(['.item', '//li[contains(@class, "number")]']));
 	console.log('link', res.context.query.url('#link'));
 	console.log('links', res.context.query.urls('.link'));
 	console.log('text', res.context.query.text('.text'));
