@@ -3,19 +3,26 @@
 const unprint = require('../src/app');
 
 async function initTest() {
-	await unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=5000', {
-		headless: false,
-		async control(_page) {
-			//
-		},
-	});
-
-	await unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=2000', {
-		headless: false,
-		async control(_page) {
-			//
-		},
-	});
+	await Promise.all([
+		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=5000', {
+			headless: false,
+			async control(_page) {
+				//
+			},
+		}),
+		new Promise((resolve) => {
+			setTimeout(() => {
+				resolve();
+			}, 1000);
+		}).then(async () => {
+			await unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=2000', {
+				headless: false,
+				async control(_page) {
+					//
+				},
+			});
+		}),
+	]);
 
 	const res = await unprint.browser('https://www.scrapingcourse.com/', {
 	// await unprint.browser('https://www.scrapingcourse.com/', {

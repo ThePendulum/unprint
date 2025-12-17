@@ -202,10 +202,18 @@ Extracts the CSS `url()` background from a style attribute. Alias for `query.sty
 ### HTTP request
 * `unprint.get(url, [options])`
 * `unprint.post(url, body, [options])`
+* `unprint.request(url, body, [options], [method])`
 
 Options
 * `select`: Pre-query and initialize a specific element on the page
 * `selectAll`: Pre-query and initialize multiple specific element on the page
+
+Use Playwright with Chromium (experimental)
+* `unprint.browserRequest(url, [options])`
+* `unprint.closeAllBrowsers()`
+
+Additional options
+* `browser`: Options object passed to Playwright
 
 Returns
 ```javascript

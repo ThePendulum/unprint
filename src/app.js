@@ -1048,7 +1048,6 @@ const clients = new Map();
 /* eslint-enable no-param-reassign */
 async function getBrowserInstance(scope) {
 	if (clients.has(scope)) {
-		console.log('REUSE', scope);
 		return clients.get(scope);
 	}
 
@@ -1068,7 +1067,6 @@ async function getBrowserInstance(scope) {
 }
 
 async function closeAllBrowsers() {
-	console.log(Array.from(clients.values()));
 	await Promise.all(Array.from(clients.values()).map(async (client) => client.browser.close()));
 }
 
@@ -1115,12 +1113,6 @@ async function browserRequest(url, customOptions = {}) {
 		scope: 'main',
 		url,
 	}, globalOptions, customOptions]);
-
-	/*
-	const browser = await chromium.launch({
-		...options,
-	});
-	*/
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
