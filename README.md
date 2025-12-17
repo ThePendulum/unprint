@@ -205,15 +205,23 @@ Extracts the CSS `url()` background from a style attribute. Alias for `query.sty
 * `unprint.request(url, body, [options], [method])`
 
 Options
-* `select`: Pre-query and initialize a specific element on the page
-* `selectAll`: Pre-query and initialize multiple specific element on the page
+* `select`: Pre-query and initialize a specific element on the page.
+* `selectAll`: Pre-query and initialize multiple specific element on the page.
 
 Use Playwright with Chromium (experimental)
 * `unprint.browserRequest(url, [options])`
 * `unprint.closeAllBrowsers()`
 
 Additional options
-* `browser`: Options object passed to Playwright
+* `scope`: Browser instance to (re)use, default `main`.
+* `browser`: Options object passed to Playwright's `launch`, requires new scope.
+* `browser.headless`: Headless mode, set to `false` to launch visible browser, default `true`.
+* `context`: Options object passed to Playwright's `newContext`, requires new scope.
+* `page`: Options object passed to Playwright's `goto`.
+
+This requires you to install the Chromium executable:
+* `sudo npx patchright install-deps`
+* `npx patchright install`
 
 Returns
 ```javascript

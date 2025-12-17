@@ -1046,17 +1046,19 @@ function setProxy(instance, options, url) {
 const clients = new Map();
 
 /* eslint-enable no-param-reassign */
-async function getBrowserInstance(scope) {
+async function getBrowserInstance(scope, options) {
 	if (clients.has(scope)) {
 		return clients.get(scope);
 	}
 
 	const browser = await chromium.launch({
-		headless: false,
+		headless: true,
+		...options.browser,
 	});
 
 	const context = await browser.newContext({
 		userAgent: 'unprint',
+		...options.context,
 	});
 
 	const client = { context, browser };
@@ -1126,11 +1128,11 @@ async function browserRequest(url, customOptions = {}) {
 	};
 
 	return limiter.schedule(async () => {
-		const { context, browser } = await getBrowserInstance(options.scope);
+		const { context, browser } = await getBrowserInstance(options.scope, options);
 		const page = await context.newPage();
 
 		const res = await page.goto(url, {
-			...options.browser,
+			...options.page,
 		});
 
 		const status = res.status();
