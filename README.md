@@ -18,6 +18,10 @@ unprint.options({
 			concurrency: 10,
 			interval: 10, // ms
 		},
+		browser: {
+			concurrency: 5,
+			interval: 20,
+		},
 		[hostname]: {
 			enable: true, // enabled by default
 			concurrency: 1,

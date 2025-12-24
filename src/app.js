@@ -21,6 +21,10 @@ const settings = {
 			interval: 10,
 			concurrency: 10,
 		},
+		browser: {
+			interval: 20,
+			concurrency: 5,
+		},
 	},
 };
 
@@ -988,7 +992,7 @@ function getLimiterValue(prop, options, hostname) {
 		return options.limits[hostname][prop];
 	}
 
-	return options.limits.default[prop];
+	return options.limits[options?.limiter || 'default'][prop];
 }
 
 function getLimiter(url, options) {
@@ -1125,6 +1129,7 @@ async function browserRequest(url, customOptions = {}) {
 		timeout: 1000,
 		extract: true,
 		scope: 'main',
+		limiter: 'browser',
 		url,
 	}, globalOptions, customOptions]);
 
