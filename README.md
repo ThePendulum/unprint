@@ -219,9 +219,9 @@ Use Playwright with Chromium (experimental)
 Additional options
 * `control`: Async function to interface with Playwright page passed as argument
 * `scope`: Browser instance to (re)use, set to `null` to force new scope every request, default `main`.
-* `browser`: Options object passed to Playwright's `launch`, requires new scope.
+* `browser`: Options object passed to Playwright's `launch`.
 * `browser.headless`: Headless mode, set to `false` to launch visible browser, default `true`.
-* `context`: Options object passed to Playwright's `newContext`, requires new scope.
+* `context`: Options object passed to Playwright's `newContext`.
 * `page`: Options object passed to Playwright's `goto`.
 
 This requires you to install the Chromium executable:

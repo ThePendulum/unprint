@@ -2,6 +2,18 @@
 
 const unprint = require('../src/app');
 
+unprint.options({ // or unprint.options();
+	proxy: {
+		enable: true,
+		use: false, // don't use for all requests by default
+		host: '192.168.1.25',
+		port: 8888,
+		hostnames: [
+			'tools-httpstatus.pickup-services.com',
+		],
+	},
+});
+
 async function initTest() {
 	// concurrency
 	await Promise.all([
@@ -41,17 +53,18 @@ async function initTest() {
 					headless: false,
 				},
 				async control(_page) {
-					//
+					// return new Promise((resolve) => { setTimeout(() => resolve(), 60000); });
 				},
 			});
 		}),
 	]);
 
 	const res = await unprint.browser('https://www.scrapingcourse.com/', {
-	// await unprint.browser('https://www.scrapingcourse.com/', {
-		headless: false,
+		browser: {
+			headless: false,
+		},
 		async control(_page) {
-			return 'test';
+			// await new Promise((resolve) => { setTimeout(() => resolve(), 60000); });
 		},
 	});
 

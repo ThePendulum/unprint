@@ -10,6 +10,7 @@ const axios = require('axios').default;
 const Bottleneck = require('bottleneck');
 const moment = require('moment-timezone');
 const merge = require('deepmerge');
+const hashObject = require('object-hash');
 const srcset = require('srcset');
 
 const settings = {
@@ -1024,7 +1025,6 @@ function setProxy(instance, options, url) {
 
 	if (options.proxy
 		&& options.proxy.enable !== false
-		&& options.proxy.use !== false // use is a local override for enable
 		&& (options.proxy.use
 		|| options.proxy.hostnames?.includes(hostname))
 	) {
@@ -1035,14 +1035,18 @@ function setProxy(instance, options, url) {
 			},
 		});
 
-		instance.defaults.httpAgent = proxyAgent;
-		instance.defaults.httpsAgent = proxyAgent;
+		if (instance) {
+			instance.defaults.httpAgent = proxyAgent;
+			instance.defaults.httpsAgent = proxyAgent;
+		}
 
 		return true;
 	}
 
-	instance.defaults.httpAgent = options.httpsAgent || new http.Agent({ ...options.agent });
-	instance.defaults.httpsAgent = options.httpsAgent || new https.Agent({ ...options.agent });
+	if (instance) {
+		instance.defaults.httpAgent = options.httpsAgent || new http.Agent({ ...options.agent });
+		instance.defaults.httpsAgent = options.httpsAgent || new https.Agent({ ...options.agent });
+	}
 
 	return false;
 }
@@ -1050,9 +1054,11 @@ function setProxy(instance, options, url) {
 const clients = new Map();
 
 /* eslint-enable no-param-reassign */
-async function getBrowserInstance(scope, options) {
-	if (clients.has(scope)) {
-		const client = clients.get(scope);
+async function getBrowserInstance(scope, options, useProxy = false) {
+	const scopeKey = `${scope}_${useProxy ? 'proxy' : 'direct'}_${options.browser ? hashObject(options.browser) : 'default'}_${options.context ? hashObject(options.context) : 'default'}`;
+
+	if (clients.has(scopeKey)) {
+		const client = clients.get(scopeKey);
 
 		await client.launchers;
 
@@ -1068,13 +1074,18 @@ async function getBrowserInstance(scope, options) {
 	const contextLauncher = browserLauncher.then((browser) => browser.newContext({
 		userAgent: 'unprint',
 		...options.context,
+		...(useProxy && {
+			proxy: {
+				server: `${options.proxy.host}:${options.proxy.port}`,
+			},
+		}),
 	}));
 
 	const launchers = Promise.all([browserLauncher, contextLauncher]);
 	const client = { launchers };
 
 	if (scope) {
-		clients.set(scope, client);
+		clients.set(scopeKey, client);
 	}
 
 	client.browser = await browserLauncher;
@@ -1134,18 +1145,22 @@ async function browserRequest(url, customOptions = {}) {
 	}, globalOptions, customOptions]);
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
+	const useProxy = setProxy(null, options, url);
 
 	const feedbackBase = {
 		url,
 		method: 'get',
 		interval,
 		concurrency,
-		isProxied: false,
+		isProxied: useProxy,
+		isBrowser: true,
 		options,
 	};
 
+	events.emit('requestInit', feedbackBase);
+
 	return limiter.schedule(async () => {
-		const { context, browser } = await getBrowserInstance(options.scope, options);
+		const { context, browser } = await getBrowserInstance(options.scope, options, useProxy);
 		const page = await context.newPage();
 
 		const res = await page.goto(url, {
@@ -1196,6 +1211,12 @@ async function browserRequest(url, customOptions = {}) {
 			await browser.close();
 		}
 
+		events.emit('requestSuccess', {
+			...feedbackBase,
+			status,
+			statusText,
+		});
+
 		return curateResponse({
 			data,
 			status,
@@ -1236,6 +1257,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		interval,
 		concurrency,
 		isProxied,
+		isBrowser: false,
 		options,
 	};
 
