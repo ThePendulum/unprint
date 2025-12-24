@@ -3,6 +3,25 @@
 const unprint = require('../src/app');
 
 async function initTest() {
+	// concurrency
+	await Promise.all([
+		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=500', {
+			browser: {
+				headless: false,
+			},
+		}),
+		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=500', {
+			browser: {
+				headless: false,
+			},
+		}),
+		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=500', {
+			browser: {
+				headless: false,
+			},
+		}),
+	]);
+
 	await Promise.all([
 		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=5000', {
 			browser: {

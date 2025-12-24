@@ -1048,24 +1048,33 @@ const clients = new Map();
 /* eslint-enable no-param-reassign */
 async function getBrowserInstance(scope, options) {
 	if (clients.has(scope)) {
-		return clients.get(scope);
+		const client = clients.get(scope);
+
+		await client.launchers;
+
+		return client;
 	}
 
-	const browser = await chromium.launch({
+	// if we await here, we create a race condition, and a second call to getBrowserInstance would launch another browser that will overwrite the first one
+	const browserLauncher = chromium.launch({
 		headless: true,
 		...options.browser,
 	});
 
-	const context = await browser.newContext({
+	const contextLauncher = browserLauncher.then((browser) => browser.newContext({
 		userAgent: 'unprint',
 		...options.context,
-	});
+	}));
 
-	const client = { context, browser };
+	const launchers = Promise.all([browserLauncher, contextLauncher]);
+	const client = { launchers };
 
 	if (scope) {
 		clients.set(scope, client);
 	}
+
+	client.browser = await browserLauncher;
+	client.context = await contextLauncher;
 
 	return client;
 }
