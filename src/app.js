@@ -1197,7 +1197,19 @@ async function browserRequest(url, customOptions = {}) {
 		let control = null;
 
 		if (customOptions.control) {
-			control = await customOptions.control(page, { context, browser });
+			try {
+				control = await customOptions.control(page, { context, browser });
+			} catch (error) {
+				return {
+					ok: false,
+					controlError: error.message,
+					status,
+					statusText,
+					headers,
+					response: res,
+					res,
+				};
+			}
 		}
 
 		events.emit('controlSuccess', feedbackBase);

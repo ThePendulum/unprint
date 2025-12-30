@@ -139,7 +139,7 @@ Returns the `src` from an image element (or any other specified target) as a str
 Return the contents of a `data-` attribute.
 
 #### Query a source set
-`query.sourceSet([selector], [options])` or `query.srcSet()`
+`query.sourceSet(selector, [property], [options])` or `query.srcSet()`
 
 Options:
 * `includeDescriptor`: Produce an array of `{ descriptor, url }` instead of URL strings.
