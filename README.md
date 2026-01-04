@@ -218,7 +218,8 @@ Use Playwright with Chromium (experimental)
 
 Additional options
 * `control`: Async function to interface with Playwright page passed as argument
-* `scope`: Browser instance to (re)use, set to `null` to force new scope every request, default `main`.
+* `clientScope`: Browser instance to (re)use, set to `null` to force new scope every request, default `main`.
+* `clientRetirement`: Number of requests until a browser gets restarted for resource clean-up, default `20`.
 * `browser`: Options object passed to Playwright's `launch`.
 * `browser.headless`: Headless mode, set to `false` to launch visible browser, default `true`.
 * `context`: Options object passed to Playwright's `newContext`.

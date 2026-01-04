@@ -16,23 +16,20 @@ unprint.options({ // or unprint.options();
 
 async function initTest() {
 	// concurrency
-	await Promise.all([
-		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=500', {
+	await Promise.all(Array.from({ length: 20 }).map(async () => {
+		// await unprint.browser(`https://tools-httpstatus.pickup-services.com/${Math.random() < 0.2 ? '404' : '200'}?sleep=${Math.round(Math.random() * 500)}`, {
+		await unprint.browser(`https://tools-httpstatus.pickup-services.com/200?sleep=${Math.round(Math.random() * 5000)}`, {
+			// client: null,
+			interval: 100,
 			browser: {
-				headless: false,
+				headless: true,
 			},
-		}),
-		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=500', {
-			browser: {
-				headless: false,
-			},
-		}),
-		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=500', {
-			browser: {
-				headless: false,
-			},
-		}),
-	]);
+		});
+	}));
+
+	// console.log('Requests done, waiting...');
+
+	// 	await new Promise((resolve) => { setTimeout(() => resolve(), 60 * 60 * 1000); });
 
 	await Promise.all([
 		unprint.browser('https://tools-httpstatus.pickup-services.com/200?sleep=5000', {

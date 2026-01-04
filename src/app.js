@@ -1060,6 +1060,13 @@ async function getBrowserInstance(scope, options, useProxy = false) {
 	if (clients.has(scopeKey)) {
 		const client = clients.get(scopeKey);
 
+		client.uses += 1;
+
+		if (client.uses >= (options.clientRetirement || 20)) {
+			client.retired = true;
+			clients.delete(scopeKey);
+		}
+
 		await client.launchers;
 
 		return client;
@@ -1082,7 +1089,14 @@ async function getBrowserInstance(scope, options, useProxy = false) {
 	}));
 
 	const launchers = Promise.all([browserLauncher, contextLauncher]);
-	const client = { launchers };
+
+	const client = {
+		key: scopeKey,
+		launchers,
+		active: 0,
+		uses: 1,
+		retired: false,
+	};
 
 	if (scope) {
 		clients.set(scopeKey, client);
@@ -1139,7 +1153,7 @@ async function browserRequest(url, customOptions = {}) {
 	const options = merge.all([{
 		timeout: 1000,
 		extract: true,
-		scope: 'main',
+		client: 'main',
 		limiter: 'browser',
 		url,
 	}, globalOptions, customOptions]);
@@ -1160,8 +1174,11 @@ async function browserRequest(url, customOptions = {}) {
 	events.emit('requestInit', feedbackBase);
 
 	return limiter.schedule(async () => {
-		const { context, browser } = await getBrowserInstance(options.scope, options, useProxy);
-		const page = await context.newPage();
+		const client = await getBrowserInstance(options.client, options, useProxy);
+
+		client.active += 1;
+
+		const page = await client.context.newPage();
 
 		const res = await page.goto(url, {
 			...options.page,
@@ -1179,6 +1196,8 @@ async function browserRequest(url, customOptions = {}) {
 				status,
 				statusText,
 			});
+
+			client.active -= 1;
 
 			return {
 				ok: false,
@@ -1198,8 +1217,10 @@ async function browserRequest(url, customOptions = {}) {
 
 		if (customOptions.control) {
 			try {
-				control = await customOptions.control(page, { context, browser });
+				control = await customOptions.control(page, client);
 			} catch (error) {
+				client.active -= 1;
+
 				return {
 					ok: false,
 					controlError: error.message,
@@ -1218,16 +1239,19 @@ async function browserRequest(url, customOptions = {}) {
 
 		await page.close();
 
-		if (options.scope === null) {
-			// this browser won't be reused
-			await browser.close();
-		}
-
 		events.emit('requestSuccess', {
 			...feedbackBase,
 			status,
 			statusText,
 		});
+
+		client.active -= 1;
+
+		if (options.client === null // this browser is single-use
+			|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
+			// this browser won't be reused
+			await client.browser.close();
+		}
 
 		return curateResponse({
 			data,
