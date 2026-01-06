@@ -191,12 +191,18 @@ function queryContents(context, selector, customOptions) {
 	const options = {
 		...context.options,
 		trim: true,
+		filter: true,
 		...customOptions,
 	};
 
 	const targets = queryElements(context, selector, options);
+	const extractedContents = targets.map((target) => extractContent(target, options));
 
-	return targets.map((target) => extractContent(target, options)).filter(Boolean);
+	if (options.filter) {
+		return extractedContents.filter(Boolean);
+	}
+
+	return extractedContents;
 }
 
 function queryAttribute(context, selector, attribute, customOptions) {
@@ -277,15 +283,24 @@ function queryNumber(context, selector, customOptions) {
 }
 
 function queryNumbers(context, selector, customOptions) {
+	const options = {
+		filter: true,
+		...customOptions,
+	};
+
 	const numberStrings = queryContents(context, selector, customOptions);
 
 	if (!numberStrings) {
 		return null;
 	}
 
-	return numberStrings
-		.map((numberString) => extractNumber(numberString, customOptions))
-		.filter(Boolean);
+	const extractedNumbers = numberStrings.map((numberString) => extractNumber(numberString, customOptions));
+
+	if (options.filter) {
+		return extractedNumbers.filter(Boolean);
+	}
+
+	return extractedNumbers;
 }
 
 function queryHtml(context, selector, customOptions) {
