@@ -1056,6 +1056,14 @@ function getCookie(options) {
 	return headerCookieData;
 }
 
+function filterHeaders(headers, options) {
+	if (headers && options.defaultHeaders !== false) {
+		return Object.fromEntries(Object.entries(headers).filter(([_key, value]) => value !== null));
+	}
+
+	return headers;
+}
+
 function curateResponse(res, data, options, { url, control, customOptions }) {
 	const base = {
 		ok: true,
@@ -1238,11 +1246,11 @@ async function browserRequest(url, customOptions = {}) {
 			const headers = route.request().headers();
 
 			route.continue({
-				headers: {
+				headers: filterHeaders({
 					...headers,
 					...options.headers,
 					cookie: getCookie(options),
-				},
+				}, options),
 			});
 		});
 
@@ -1393,15 +1401,17 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 	const curatedBody = curateRequestBody(body);
 	const curatedCookie = getCookie(options);
 
+	const headers = filterHeaders({
+		...curatedBody.headers,
+		...options.headers,
+		cookie: curatedCookie,
+	}, options);
+
 	const res = await limiter.schedule(async () => undici.fetch(url, {
 		dispatcher: agent,
 		method,
 		body: curatedBody.body,
-		headers: {
-			...curatedBody.headers,
-			...options.headers,
-			cookie: curatedCookie,
-		},
+		headers,
 		signal: options.abortSignal,
 	})).catch((error) => ({ // tends to happen when proxy can't reach host
 		status: 500,

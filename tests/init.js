@@ -37,6 +37,7 @@ async function initTest() {
 	const cookiesRes = await unprint.get(`http://127.0.0.1:${port}/json`, {
 		headers: {
 			cookie: 'foo=bar',
+			'User-Agent': null,
 		},
 		cookies: {
 			hello: 'world',
