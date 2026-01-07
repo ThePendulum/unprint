@@ -211,9 +211,10 @@ Extracts the CSS `url()` background from a style attribute. Alias for `query.sty
 Options
 * `select`: Pre-query and initialize a specific element on the page.
 * `selectAll`: Pre-query and initialize multiple specific element on the page.
+* `interface`: Use undici `fetch` (browser-like, default) or `request` (raw)
 
 Use Playwright with Chromium (experimental)
-* `unprint.browserRequest(url, [options])`
+* `unprint.browserRequest(url, [options])` or `unprint.browser(url, [options])`
 * `unprint.closeAllBrowsers()`: Close reused browser instances.
 
 Additional options

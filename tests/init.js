@@ -30,7 +30,7 @@ async function initTest() {
 	unprint.on('requestSuccess', (successData) => console.log('success', successData));
 	// unprint.on('query', (queryData) => console.log('query', queryData));
 
-	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body' });
+	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body', interface: 'request' });
 
 	const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
 	const errorRes = await unprint.get(`http://127.0.0.1:${port}/error/404`);
@@ -44,9 +44,16 @@ async function initTest() {
 		},
 	});
 
+	const proxyRes = await unprint.get('https://api.ipify.org?format=json', {
+		interface: 'request',
+		useProxy: true,
+	});
+
 	console.log('JSON RES', jsonRes);
 	console.log('ERROR RES', errorRes);
 	console.log('COOKIES RES', cookiesRes);
+
+	console.log('PROXY RES', proxyRes.data);
 
 	console.log('title', res.context.query.content('//*[contains(text(), "Test")]'));
 	console.log('date', res.context.query.date('#date', 'DD-MM-YYYY HH:mm'));

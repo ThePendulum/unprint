@@ -1377,6 +1377,7 @@ function curateRequestBody(body) {
 
 async function request(url, body, customOptions = {}, method = 'GET') {
 	const options = merge.all([{
+		interface: 'fetch', // fetch or request
 		timeout: 10000,
 		extract: true,
 		url,
@@ -1407,7 +1408,7 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		cookie: curatedCookie,
 	}, options);
 
-	const res = await limiter.schedule(async () => undici.fetch(url, {
+	const res = await limiter.schedule(async () => undici[options.interface](url, {
 		dispatcher: agent,
 		method,
 		body: curatedBody.body,
@@ -1419,20 +1420,24 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		async text() { return error.cause?.cause?.message || 'Request aborted'; },
 	}));
 
-	if (!(res.status >= 200 && res.status < 300)) {
-		const data = await res.text();
+	const data = options.interface === 'fetch'
+		? await res.text()
+		: await res.body.text();
 
-		handleError(new Error(`HTTP response from ${url} not OK (${res.status} ${res.statusText}): ${data}`), 'HTTP_NOT_OK');
+	const status = res.statusCode || res.status;
+
+	if (!(status >= 200 && status < 300)) {
+		handleError(new Error(`HTTP response from ${url} not OK (${status} ${res.statusText}): ${data}`), 'HTTP_NOT_OK');
 
 		events.emit('requestError', {
 			...feedbackBase,
-			status: res.status,
+			status,
 			statusText: res.statusText,
 		});
 
 		return {
 			ok: false,
-			status: res.status,
+			status,
 			statusText: res.statusText,
 			headers: res.headers,
 			response: res,
@@ -1442,11 +1447,9 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 
 	events.emit('requestSuccess', {
 		...feedbackBase,
-		status: res.status,
+		status,
 		statusText: res.statusText,
 	});
-
-	const data = await res.text();
 
 	return curateResponse(res, data, options, { url, customOptions });
 }
