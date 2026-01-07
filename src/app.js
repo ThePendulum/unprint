@@ -1154,7 +1154,7 @@ async function getBrowserInstance(scope, options, useProxy = false) {
 	});
 
 	const contextLauncher = browserLauncher.then((browser) => browser.newContext({
-		userAgent: 'unprint',
+		userAgent: options.browserUserAgent || options.userAgent,
 		...options.context,
 		...(useProxy && {
 			proxy: {
