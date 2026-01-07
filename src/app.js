@@ -3,10 +3,9 @@
 const { JSDOM, VirtualConsole } = require('jsdom');
 const { chromium } = require('patchright');
 const EventEmitter = require('events');
-const http = require('http');
-const https = require('https');
-const tunnel = require('tunnel');
-const axios = require('axios').default;
+const undici = require('undici');
+const qs = require('node:querystring');
+const cookie = require('cookie');
 const Bottleneck = require('bottleneck');
 const moment = require('moment-timezone');
 const merge = require('deepmerge');
@@ -1034,38 +1033,88 @@ function getLimiter(url, options) {
 	};
 }
 
-/* eslint-disable no-param-reassign */
-function setProxy(instance, options, url) {
-	const { hostname } = new URL(url);
+function getCookie(options) {
+	const headerCookieData = options.headers?.cookie || options.headers?.Cookie || null;
+	const headerCookies = headerCookieData && cookie.parseCookie(headerCookieData);
 
-	if (options.proxy
-		&& options.proxy.enable !== false
-		&& (options.proxy.use
-		|| options.proxy.hostnames?.includes(hostname))
-	) {
-		const proxyAgent = tunnel.httpsOverHttp({
-			proxy: {
-				host: options.proxy.host,
-				port: options.proxy.port,
-			},
+	if (typeof options.cookies === 'object') {
+		return cookie.stringifyCookie({
+			...headerCookies,
+			...options.cookies,
 		});
-
-		if (instance) {
-			instance.defaults.httpAgent = proxyAgent;
-			instance.defaults.httpsAgent = proxyAgent;
-		}
-
-		return true;
 	}
 
-	if (instance) {
-		instance.defaults.httpAgent = options.httpsAgent || new http.Agent({ ...options.agent });
-		instance.defaults.httpsAgent = options.httpsAgent || new https.Agent({ ...options.agent });
+	if (typeof options.cookies === 'string') {
+		const cookieData = cookie.parseCookie(options.cookies);
+
+		return cookie.stringifyCookie({
+			...headerCookies,
+			...cookieData,
+		});
 	}
 
-	return false;
+	return headerCookieData;
 }
 
+function curateResponse(res, data, options, { url, control, customOptions }) {
+	const base = {
+		ok: true,
+		data,
+		status: res.statusCode || res.status,
+		statusText: res.statusText,
+		headers: res.headers,
+		response: res,
+		res,
+		control,
+	};
+
+	if (['application/json', 'application/javascript'].some((type) => {
+		if (typeof res.headers.get === 'function') {
+			return res.headers.get('content-type')?.includes(type);
+		}
+
+		return res.headers['content-type']?.includes(type);
+	})) {
+		if (typeof data === 'object') {
+			return {
+				...base,
+				data,
+			};
+		}
+
+		try {
+			return {
+				...base,
+				data: JSON.parse(data),
+			};
+		} catch (error) {
+			return {
+				...base,
+				data,
+			};
+		}
+	}
+
+	if (!options.extract) {
+		return base;
+	}
+
+	const contextOptions = {
+		...customOptions,
+		origin: url,
+	};
+
+	const context = options.selectAll
+		? initAll(data, options.selectAll, contextOptions)
+		: init(data, options.select, contextOptions);
+
+	return {
+		...base,
+		context,
+	};
+}
+
+/* eslint-disable no-param-reassign */
 const clients = new Map();
 
 /* eslint-enable no-param-reassign */
@@ -1127,43 +1176,6 @@ async function closeAllBrowsers() {
 	await Promise.all(Array.from(clients.values()).map(async (client) => client.browser.close()));
 }
 
-function curateResponse(res, options, { url, control, customOptions }) {
-	const base = {
-		ok: true,
-		status: res.status,
-		statusText: res.statusText,
-		headers: res.headers,
-		response: res,
-		res,
-		control,
-	};
-
-	if (['application/json', 'application/javascript'].some((type) => res.headers['content-type']?.includes(type)) && typeof res.data === 'object') {
-		return {
-			...base,
-			data: res.data,
-		};
-	}
-
-	if (!options.extract) {
-		return base;
-	}
-
-	const contextOptions = {
-		...customOptions,
-		origin: url,
-	};
-
-	const context = options.selectAll
-		? initAll(res.data, options.selectAll, contextOptions)
-		: init(res.data, options.select, contextOptions);
-
-	return {
-		...base,
-		context,
-	};
-}
-
 async function closeBrowser(client, options) {
 	if (options.client === null // this browser is single-use
 		|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
@@ -1172,9 +1184,28 @@ async function closeBrowser(client, options) {
 	}
 }
 
+function getAgent(options, url) {
+	const { hostname } = new URL(url);
+
+	if (options.proxy
+		&& options.proxy.enable !== false
+		&& (options.useProxy // defined locally
+		|| options.proxy.use // defined globally
+		|| options.proxy.hostnames?.includes(hostname))
+	) {
+		return new undici.ProxyAgent(`http://${options.proxy.host}:${options.proxy.port}/`, {
+			bodyTimeout: options.timeout,
+		});
+	}
+
+	return new undici.Agent({
+		bodyTimeout: options.timeout,
+	});
+}
+
 async function browserRequest(url, customOptions = {}) {
 	const options = merge.all([{
-		timeout: 1000,
+		timeout: 10000,
 		extract: true,
 		client: 'main',
 		limiter: 'browser',
@@ -1182,14 +1213,14 @@ async function browserRequest(url, customOptions = {}) {
 	}, globalOptions, customOptions]);
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
-	const useProxy = setProxy(null, options, url);
+	const agent = getAgent(options, url);
 
 	const feedbackBase = {
 		url,
 		method: 'get',
 		interval,
 		concurrency,
-		isProxied: useProxy,
+		isProxied: agent instanceof undici.ProxyAgent,
 		isBrowser: true,
 		options,
 	};
@@ -1197,11 +1228,23 @@ async function browserRequest(url, customOptions = {}) {
 	events.emit('requestInit', feedbackBase);
 
 	return limiter.schedule(async () => {
-		const client = await getBrowserInstance(options.client, options, useProxy);
+		const client = await getBrowserInstance(options.client, options, agent instanceof undici.ProxyAgent);
 
 		client.active += 1;
 
 		const page = await client.context.newPage();
+
+		await page.route(url, async (route) => {
+			const headers = route.request().headers();
+
+			route.continue({
+				headers: {
+					...headers,
+					...options.headers,
+					cookie: getCookie(options),
+				},
+			});
+		});
 
 		const res = await page.goto(url, {
 			...options.page,
@@ -1220,7 +1263,9 @@ async function browserRequest(url, customOptions = {}) {
 		const headers = await res.allHeaders();
 
 		if (!(status >= 200 && status < 300)) {
-			handleError(new Error(`HTTP response from ${url} not OK (${status} ${statusText}): ${res.data}`), 'HTTP_NOT_OK');
+			const data = await page.content();
+
+			handleError(new Error(`HTTP response from ${url} not OK (${status} ${statusText}): ${data}`), 'HTTP_NOT_OK');
 
 			events.emit('requestError', {
 				...feedbackBase,
@@ -1285,11 +1330,10 @@ async function browserRequest(url, customOptions = {}) {
 		await closeBrowser(client, options);
 
 		return curateResponse({
-			data,
 			status,
 			statusText,
 			headers,
-		}, options, {
+		}, data, options, {
 			url,
 			customOptions,
 			control,
@@ -1297,46 +1341,78 @@ async function browserRequest(url, customOptions = {}) {
 	});
 }
 
+function curateRequestBody(body) {
+	if (!body) {
+		return { body };
+	}
+
+	if (body instanceof undici.FormData) {
+		return {
+			body: qs.stringify(body),
+			headers: {
+				'content-type': 'application/x-www-form-urlencoded',
+			},
+		};
+	}
+
+	if (typeof body === 'object') {
+		return {
+			body: JSON.stringify(body),
+			headers: {
+				'content-type': 'application/json',
+			},
+		};
+	}
+
+	return { body };
+}
+
 async function request(url, body, customOptions = {}, method = 'GET') {
 	const options = merge.all([{
-		timeout: 1000,
+		timeout: 10000,
 		extract: true,
 		url,
 	}, globalOptions, customOptions]);
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
-	const instance = axios.create({
-		method,
-		validateStatus: null,
-		headers: options.headers,
-		timeout: options.timeout,
-		signal: options.abortSignal,
-		// ...options,
-		// httpAgent: options.httpAgent || new http.Agent({ ...options.agent }),
-	});
-
-	const isProxied = setProxy(instance, options, url);
+	const agent = getAgent(options, url);
 
 	const feedbackBase = {
 		url,
 		method,
 		interval,
 		concurrency,
-		isProxied,
+		isProxied: agent instanceof undici.ProxyAgent,
 		isBrowser: false,
 		options,
 	};
 
 	events.emit('requestInit', feedbackBase);
 
-	const res = await limiter.schedule(async () => instance.request({
-		url,
-		data: body,
+	const curatedBody = curateRequestBody(body);
+	const curatedCookie = getCookie(options);
+
+	const res = await limiter.schedule(async () => undici.fetch(url, {
+		dispatcher: agent,
+		method,
+		body: curatedBody.body,
+		headers: {
+			...curatedBody.headers,
+			...options.headers,
+			cookie: curatedCookie,
+		},
+		signal: options.abortSignal,
+	})).catch((error) => ({ // tends to happen when proxy can't reach host
+		status: 500,
+		statusText: 'Request aborted',
+		async text() { return error.cause?.cause?.message || 'Request aborted'; },
 	}));
 
 	if (!(res.status >= 200 && res.status < 300)) {
-		handleError(new Error(`HTTP response from ${url} not OK (${res.status} ${res.statusText}): ${res.data}`), 'HTTP_NOT_OK');
+		const data = await res.text();
+
+		handleError(new Error(`HTTP response from ${url} not OK (${res.status} ${res.statusText}): ${data}`), 'HTTP_NOT_OK');
 
 		events.emit('requestError', {
 			...feedbackBase,
@@ -1360,7 +1436,9 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		statusText: res.statusText,
 	});
 
-	return curateResponse(res, options, { url, customOptions });
+	const data = await res.text();
+
+	return curateResponse(res, data, options, { url, customOptions });
 }
 
 async function get(url, options) {

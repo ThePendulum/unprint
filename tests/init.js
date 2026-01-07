@@ -19,7 +19,7 @@ async function initTest() {
 			},
 		},
 		proxy: {
-			host: '192.168.178.25',
+			host: '192.168.1.25',
 			port: 8888,
 			hostnames: ['127.0.0.2'],
 		},
@@ -31,8 +31,21 @@ async function initTest() {
 	// unprint.on('query', (queryData) => console.log('query', queryData));
 
 	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body' });
-	// const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
-	// const errorRes = await unprint.get(`http://127.0.0.1:${port}/error/404`);
+
+	const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
+	const errorRes = await unprint.get(`http://127.0.0.1:${port}/error/404`);
+	const cookiesRes = await unprint.get(`http://127.0.0.1:${port}/json`, {
+		headers: {
+			cookie: 'foo=bar',
+		},
+		cookies: {
+			hello: 'world',
+		},
+	});
+
+	console.log('JSON RES', jsonRes);
+	console.log('ERROR RES', errorRes);
+	console.log('COOKIES RES', cookiesRes);
 
 	console.log('title', res.context.query.content('//*[contains(text(), "Test")]'));
 	console.log('date', res.context.query.date('#date', 'DD-MM-YYYY HH:mm'));

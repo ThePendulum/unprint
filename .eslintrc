@@ -2,7 +2,7 @@
     "extends": "airbnb-base",
     "parserOptions": {
         "sourceType": "script",
-		"ecmaVersion": 2020
+		"ecmaVersion": "latest"
     },
     "rules": {
         "strict": 0,
