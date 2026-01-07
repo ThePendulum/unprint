@@ -212,6 +212,9 @@ Options
 * `select`: Pre-query and initialize a specific element on the page.
 * `selectAll`: Pre-query and initialize multiple specific element on the page.
 * `interface`: Use undici `fetch` (browser-like, default) or `request` (raw)
+* `userAgent`: The default user agent header
+* `browserUserAgent`: The default user agent header for browser-like requests (`get` interface `fetch` and `browserRequest`)
+* `apiUserAgent`: The default user agent header for raw requests (`get` interface `request`)
 
 Use Playwright with Chromium (experimental)
 * `unprint.browserRequest(url, [options])` or `unprint.browser(url, [options])`

@@ -16,6 +16,7 @@ const settings = {
 	throwErrors: false,
 	logErrors: true,
 	requestTimeout: 30000,
+	userAgent: 'unprint',
 	limits: {
 		default: {
 			interval: 10,
@@ -1056,9 +1057,11 @@ function getCookie(options) {
 	return headerCookieData;
 }
 
-function filterHeaders(headers, options) {
+function curateHeaders(headers, options) {
 	if (headers && options.defaultHeaders !== false) {
-		return Object.fromEntries(Object.entries(headers).filter(([_key, value]) => value !== null));
+		return Object.fromEntries(Object.entries(headers)
+			.map(([key, value]) => [key.toLowerCase(), value])
+			.filter(([_key, value]) => value !== null));
 	}
 
 	return headers;
@@ -1246,8 +1249,9 @@ async function browserRequest(url, customOptions = {}) {
 			const headers = route.request().headers();
 
 			route.continue({
-				headers: filterHeaders({
+				headers: curateHeaders({
 					...headers,
+					'user-agent': options.browserUserAgent || options.userAgent,
 					...options.headers,
 					cookie: getCookie(options),
 				}, options),
@@ -1402,8 +1406,9 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 	const curatedBody = curateRequestBody(body);
 	const curatedCookie = getCookie(options);
 
-	const headers = filterHeaders({
+	const headers = curateHeaders({
 		...curatedBody.headers,
+		'user-agent': (options.interface === 'fetch' ? options.browserUserAgent : options.apiUserAgent) || options.userAgent,
 		...options.headers,
 		cookie: curatedCookie,
 	}, options);

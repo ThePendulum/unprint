@@ -11,7 +11,9 @@ const port = process.env.PORT || 3101;
 
 async function initTest() {
 	unprint.options({
-		headers: { 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36' },
+		userAgent: 'unprint',
+		apiUserAgent: 'unprint',
+		browserUserAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
 		limits: {
 			default: {
 				concurrency: 1,
@@ -52,7 +54,6 @@ async function initTest() {
 	console.log('JSON RES', jsonRes);
 	console.log('ERROR RES', errorRes);
 	console.log('COOKIES RES', cookiesRes);
-
 	console.log('PROXY RES', proxyRes.data);
 
 	console.log('title', res.context.query.content('//*[contains(text(), "Test")]'));
