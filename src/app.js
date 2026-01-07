@@ -1164,6 +1164,14 @@ function curateResponse(res, options, { url, control, customOptions }) {
 	};
 }
 
+async function closeBrowser(client, options) {
+	if (options.client === null // this browser is single-use
+		|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
+		// this browser won't be reused
+		await client.browser.close();
+	}
+}
+
 async function browserRequest(url, customOptions = {}) {
 	const options = merge.all([{
 		timeout: 1000,
@@ -1197,7 +1205,15 @@ async function browserRequest(url, customOptions = {}) {
 
 		const res = await page.goto(url, {
 			...options.page,
-		});
+		}).catch((error) => error);
+
+		if (res instanceof Error) {
+			return {
+				ok: false,
+				status: null,
+				statusText: res.name,
+			};
+		}
 
 		const status = res.status();
 		const statusText = res.statusText();
@@ -1213,6 +1229,8 @@ async function browserRequest(url, customOptions = {}) {
 			});
 
 			client.active -= 1;
+
+			await closeBrowser(client, options);
 
 			return {
 				ok: false,
@@ -1235,6 +1253,8 @@ async function browserRequest(url, customOptions = {}) {
 				control = await customOptions.control(page, client);
 			} catch (error) {
 				client.active -= 1;
+
+				await closeBrowser(client, options);
 
 				return {
 					ok: false,
@@ -1262,11 +1282,7 @@ async function browserRequest(url, customOptions = {}) {
 
 		client.active -= 1;
 
-		if (options.client === null // this browser is single-use
-			|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
-			// this browser won't be reused
-			await client.browser.close();
-		}
+		await closeBrowser(client, options);
 
 		return curateResponse({
 			data,
