@@ -1206,11 +1206,25 @@ function getAgent(options, url) {
 	) {
 		return new undici.ProxyAgent(`http://${options.proxy.host}:${options.proxy.port}/`, {
 			bodyTimeout: options.timeout,
+			interceptors: { // only applies to fetch
+				Agent: [
+					undici.interceptors.redirect({
+						maxRedirection: options.followRedirects ? options.maxRedirects : 0,
+					}),
+				],
+			},
 		});
 	}
 
 	return new undici.Agent({
 		bodyTimeout: options.timeout,
+		interceptors: { // only applies to fetch
+			Agent: [
+				undici.interceptors.redirect({
+					maxRedirection: options.followRedirects ? options.maxRedirects : 0,
+				}),
+			],
+		},
 	});
 }
 
@@ -1379,11 +1393,13 @@ function curateRequestBody(body) {
 	return { body };
 }
 
-async function request(url, body, customOptions = {}, method = 'GET') {
+async function request(url, body, customOptions = {}, method = 'GET', redirects = 0) {
 	const options = merge.all([{
 		interface: 'fetch', // fetch or request
 		timeout: 10000,
 		extract: true,
+		followRedirects: true,
+		maxRedirects: 3,
 		url,
 	}, globalOptions, customOptions]);
 
@@ -1425,11 +1441,23 @@ async function request(url, body, customOptions = {}, method = 'GET') {
 		async text() { return error.cause?.cause?.message || 'Request aborted'; },
 	}));
 
+	const status = res.statusCode || res.status;
+
+	// fetch handles redirects internally, configured by agent/dispatcher, don't follow again
+	if (options.interface === 'request'
+		&& [301, 302, 303, 307, 308].includes(status)
+		&& res.headers.location
+		&& options.followRedirects
+		&& redirects < options.maxRedirects
+	) {
+		const newUrl = new URL(res.headers.location, url).toString();
+
+		return request(newUrl, body, options, method, redirects + 1);
+	}
+
 	const data = options.interface === 'fetch'
 		? await res.text()
 		: await res.body.text();
-
-	const status = res.statusCode || res.status;
 
 	if (!(status >= 200 && status < 300)) {
 		handleError(new Error(`HTTP response from ${url} not OK (${status} ${res.statusText}): ${data}`), 'HTTP_NOT_OK');
