@@ -1434,6 +1434,7 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 		method,
 		body: curatedBody.body,
 		headers,
+		redirect: options.followRedirects ? 'follow' : 'manual',
 		signal: options.abortSignal,
 	})).catch((error) => ({ // tends to happen when proxy can't reach host
 		status: 500,
