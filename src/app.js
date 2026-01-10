@@ -736,7 +736,7 @@ function extractDate(dateString, format, customOptions) {
 	}
 
 	const options = {
-		match: /((\d{1,4}[/-]\d{1,2}[/-]\d{1,4})|(\w+\s+\d{1,2},?\s+\d{4}))((T|\s+)\d{1,2}:\d{2}(:\d{2})?)?/g, // matches any of 01-01-1970, 1970-01-01 and January 1, 1970 with optional 00:00[:00] time
+		match: /((\d{1,4}[/-]\d{1,2}[/-]\d{1,4})|(\w+\s+\d{1,2},?\s+\d{4})|(\d{1,2}-\w+-\d{2,4}))((T|\s+)\d{1,2}:\d{2}(:\d{2})?)?/g, // matches any of 01-01-1970, 1970-01-01, 01-Jan-70 and January 1, 1970 with optional 00:00[:00] time
 		matchIndex: 0,
 		timezone: 'UTC',
 		...customOptions,
