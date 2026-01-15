@@ -1114,6 +1114,22 @@ function curateHeaders(headers, options) {
 	return headers;
 }
 
+function curateCookies(headers) {
+	const setCookie = typeof headers.get === 'function'
+		? headers.get('set-cookie')
+		: headers['set-cookie'];
+
+	if (setCookie) {
+		try {
+			return cookie.parseCookie(setCookie);
+		} catch (_error) {
+			// invalid cookie
+		}
+	}
+
+	return null;
+}
+
 function curateResponse(res, data, options, { url, control, customOptions }) {
 	const base = {
 		ok: true,
@@ -1121,6 +1137,7 @@ function curateResponse(res, data, options, { url, control, customOptions }) {
 		status: res.statusCode || res.status,
 		statusText: res.statusText,
 		headers: res.headers,
+		cookies: curateCookies(res.headers),
 		response: res,
 		res,
 		control,
@@ -1355,6 +1372,7 @@ async function browserRequest(url, customOptions = {}) {
 				status,
 				statusText,
 				headers,
+				cookies: curateCookies(headers),
 				response: res,
 				res,
 			};
@@ -1380,6 +1398,7 @@ async function browserRequest(url, customOptions = {}) {
 					status,
 					statusText,
 					headers,
+					cookies: curateCookies(headers),
 					response: res,
 					res,
 				};
@@ -1521,6 +1540,7 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 			status,
 			statusText: res.statusText,
 			headers: res.headers,
+			cookies: curateCookies(res.headers),
 			response: res,
 			res,
 		};
