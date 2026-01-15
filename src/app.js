@@ -783,11 +783,11 @@ function extractDateAgo(dateString, customOptions) {
 	}
 
 	const options = {
-		match: /(\d+)\s*(\w+)/,
+		match: /(\d+)\s*(\w+)/i,
 		...customOptions,
 	};
 
-	const timeMatch = dateString.match(options.match);
+	const timeMatch = dateString.toLowerCase().match(options.match);
 
 	if (timeMatch) {
 		const [n, period] = timeMatch.slice(1);
