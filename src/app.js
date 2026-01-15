@@ -1433,21 +1433,21 @@ async function browserRequest(url, customOptions = {}) {
 	});
 }
 
-function curateRequestBody(body) {
+function curateRequestBody(body, options) {
 	if (!body) {
 		return { body };
 	}
 
-	if (body instanceof undici.FormData) {
-		return {
-			body: qs.stringify(body),
-			headers: {
-				'content-type': 'application/x-www-form-urlencoded',
-			},
-		};
-	}
-
 	if (typeof body === 'object') {
+		if (options.form) {
+			return {
+				body: qs.stringify(body),
+				headers: {
+					'content-type': 'application/x-www-form-urlencoded',
+				},
+			};
+		}
+
 		return {
 			body: JSON.stringify(body),
 			headers: {
@@ -1485,7 +1485,7 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 
 	events.emit('requestInit', feedbackBase);
 
-	const curatedBody = curateRequestBody(body);
+	const curatedBody = curateRequestBody(body, options);
 	const curatedCookie = getCookie(options);
 
 	const headers = curateHeaders({
