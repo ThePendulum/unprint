@@ -775,6 +775,50 @@ function queryDates(context, selector, format, customOptions) {
 	}));
 }
 
+const periodRegex = /years?|months?|weeks?|days?/;
+
+function extractDateAgo(dateString, customOptions) {
+	if (!dateString) {
+		return null;
+	}
+
+	const options = {
+		match: /(\d+)\s*(\w+)/,
+		...customOptions,
+	};
+
+	const timeMatch = dateString.match(options.match);
+
+	if (timeMatch) {
+		const [n, period] = timeMatch.slice(1);
+
+		if (periodRegex.test(period)) {
+			const thenDate = moment.utc().subtract(Number(n), period);
+
+			return {
+				date: thenDate.toDate(),
+				precision: period.replace(/s$/, ''),
+			};
+		}
+	}
+
+	return null;
+}
+
+function queryDateAgo(context, selector, customOptions) {
+	const dateString = queryContent(context, selector, customOptions);
+
+	return extractDateAgo(dateString, customOptions);
+}
+
+function queryDatesAgo(context, selector, customOptions) {
+	const dateStrings = queryContents(context, selector, customOptions);
+
+	return dateStrings
+		.map((dateString) => extractDateAgo(dateString, customOptions))
+		.filter(Boolean);
+}
+
 function formatDate(dateValue, format, inputFormat) {
 	if (inputFormat) {
 		return moment(dateValue, inputFormat).format(format);
@@ -866,6 +910,9 @@ const queryFns = {
 	posters: queryPosters,
 	date: queryDate,
 	dates: queryDates,
+	dateAgo: queryDateAgo,
+	datesAgo: queryDatesAgo,
+	dateAgos: queryDatesAgo,
 	duration: queryDuration,
 	dur: queryDuration,
 	sourceSet: querySourceSet,
@@ -1520,6 +1567,7 @@ module.exports = {
 	init,
 	initAll,
 	extractDate,
+	extractDateAgo,
 	extractDuration,
 	extractNumber,
 	extractTimestamp,

@@ -168,6 +168,22 @@ Options
 
 Returns a Date object.
 
+#### Query a relative date
+`query.dateAgo(selector, [options])`
+
+Parses relative timestamps such as '8 weeks ago' and '1 year ago'.
+
+Options
+* `match` (RegExp): The text to extract before attempting to parse it as a period. Expects two capture groups, one for the duration and one for the unit.
+
+Returns
+```
+{
+	date: '2026-01-01', // Date object
+	precision: 'day', // year, month, week, day
+}
+```
+
 #### Query a duration
 `query.duration(selector, format, [options])` or `query.dur`
 
@@ -217,7 +233,7 @@ Options
 * `apiUserAgent`: The default user agent header for raw requests (`get` interface `request`)
 
 Use Playwright with Chromium (experimental)
-* `unprint.browserRequest(url, [options])` or `unprint.browser(url, [options])`
+* `unprint.browser(url, [options])`
 * `unprint.closeAllBrowsers()`: Close reused browser instances.
 
 Additional options
