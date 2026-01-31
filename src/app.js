@@ -1115,15 +1115,17 @@ function curateHeaders(headers, options) {
 }
 
 function curateCookies(headers) {
-	const setCookie = typeof headers.get === 'function'
-		? headers.get('set-cookie')
-		: headers['set-cookie'];
+	if (headers) {
+		const setCookie = typeof headers.get === 'function'
+			? headers.get('set-cookie')
+			: headers['set-cookie'];
 
-	if (setCookie) {
-		try {
-			return cookie.parseCookie(setCookie);
-		} catch (_error) {
-			// invalid cookie
+		if (setCookie) {
+			try {
+				return cookie.parseCookie(setCookie);
+			} catch (_error) {
+				// invalid cookie
+			}
 		}
 	}
 
@@ -1134,6 +1136,7 @@ function curateResponse(res, data, options, { url, control, customOptions }) {
 	const base = {
 		ok: true,
 		data,
+		body: data,
 		status: res.statusCode || res.status,
 		statusText: res.statusText,
 		headers: res.headers,
@@ -1522,12 +1525,8 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 		return request(newUrl, body, options, method, redirects + 1);
 	}
 
-	const data = options.interface === 'fetch'
-		? await res.text()
-		: await res.body.text();
-
 	if (!(status >= 200 && status < 300)) {
-		handleError(new Error(`HTTP response from ${url} not OK (${status} ${res.statusText}): ${data}`), 'HTTP_NOT_OK');
+		handleError(new Error(`HTTP response from ${url} not OK (${status} ${res.statusText})`), 'HTTP_NOT_OK');
 
 		events.emit('requestError', {
 			...feedbackBase,
@@ -1545,6 +1544,10 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 			res,
 		};
 	}
+
+	const data = options.interface === 'fetch'
+		? await res.text()
+		: await res.body.text();
 
 	events.emit('requestSuccess', {
 		...feedbackBase,

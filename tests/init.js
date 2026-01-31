@@ -48,7 +48,7 @@ async function initTest() {
 
 	const proxyRes = await unprint.get('https://api.ipify.org?format=json', {
 		interface: 'request',
-		useProxy: true,
+		useProxy: false,
 	});
 
 	console.log('JSON RES', jsonRes);
