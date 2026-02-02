@@ -376,7 +376,11 @@ function prefixUrl(urlPath, originUrl, customOptions) {
 
 	const origin = originUrl?.replace(/^.*?:/, `${options.protocol}:`);
 
-	return new URL(urlPath, origin).href;
+	try {
+		return new URL(urlPath, origin).href;
+	} catch {
+		return null;
+	}
 }
 
 function queryUrl(context, selector = 'a', customOptions) {
