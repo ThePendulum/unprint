@@ -369,6 +369,15 @@ function prefixUrl(urlPath, originUrl, customOptions) {
 		return null;
 	}
 
+	if (/^http/.test(urlPath)) {
+		// this is already a complete URL
+		return urlPath;
+	}
+
+	if (!originUrl) {
+		return null;
+	}
+
 	const options = {
 		protocol: 'https',
 		...customOptions,
@@ -378,7 +387,7 @@ function prefixUrl(urlPath, originUrl, customOptions) {
 
 	try {
 		return new URL(urlPath, origin).href;
-	} catch {
+	} catch (_error) {
 		return null;
 	}
 }
