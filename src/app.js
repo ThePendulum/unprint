@@ -379,38 +379,7 @@ function prefixUrl(urlPath, originUrl, customOptions) {
 	return new URL(urlPath, origin).href;
 }
 
-// legacy argument
-function getQueryUrlArgs(selectorOrOptions, customOptions) {
-	if (customOptions) {
-		return {
-			selector: selectorOrOptions,
-			customOptions,
-		};
-	}
-
-	if (typeof selectorOrOptions === 'string') {
-		return {
-			selector: selectorOrOptions,
-			customOptions: null,
-		};
-	}
-
-	if (!selectorOrOptions) {
-		return {
-			selector: 'a',
-			customOptions: null,
-		};
-	}
-
-	return {
-		selector: 'a',
-		customOptions: selectorOrOptions,
-	};
-}
-
-function queryUrl(context, ...args) {
-	const { selector, customOptions } = getQueryUrlArgs(...args);
-
+function queryUrl(context, selector = 'a', customOptions) {
 	const options = {
 		...context.options,
 		attribute: 'href',
