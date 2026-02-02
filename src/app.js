@@ -374,34 +374,9 @@ function prefixUrl(urlPath, originUrl, customOptions) {
 		...customOptions,
 	};
 
-	if (/^http/.test(urlPath)) {
-		// this is already a complete URL
-		return urlPath;
-	}
+	const origin = originUrl?.replace(/^.*?:/, `${options.protocol}:`);
 
-	if (options.protocol && /^\/\//.test(urlPath)) {
-		return `${options.protocol.replace(/:$/, '')}:${urlPath}`; // allow protocol to be defined either as 'https' or 'https:'
-	}
-
-	if (!originUrl) {
-		return urlPath;
-	}
-
-	const { origin, protocol } = new URL(originUrl);
-
-	if (protocol && /^\/\//.test(urlPath)) {
-		return `${protocol}${urlPath}`;
-	}
-
-	if (/^\//.test(urlPath)) {
-		return `${origin}${urlPath}`;
-	}
-
-	if (/^\.\//.test(urlPath)) {
-		return `${originUrl.replace(/\/+$/, '')}${urlPath.slice(1)}`;
-	}
-
-	return `${origin}/${urlPath}`;
+	return new URL(urlPath, origin).href;
 }
 
 // legacy argument
