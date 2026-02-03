@@ -1239,7 +1239,15 @@ async function getBrowserInstance(scope, options, useProxy = false) {
 }
 
 async function closeAllBrowsers() {
-	await Promise.all(Array.from(clients.values()).map(async (client) => client.browser.close()));
+	const closingClients = Array.from(clients.values);
+
+	await Promise.all(closingClients.map(async (client) => client.browser.close()));
+
+	events.emit('browser', {
+		action: 'close',
+		keys: closingClients.map((client) => client.key),
+		active: closingClients.reduce((acc, client) => acc + (client.active || 0), 0),
+	});
 }
 
 async function closeBrowser(client, options) {
@@ -1250,7 +1258,7 @@ async function closeBrowser(client, options) {
 
 		events.emit('browser', {
 			action: 'close',
-			key: client.key,
+			keys: [client.key],
 			active: client.active,
 		});
 	}
@@ -1318,7 +1326,7 @@ async function browserRequest(url, customOptions = {}) {
 
 		events.emit('browser', {
 			action: 'open',
-			key: client.key,
+			keys: [client.key],
 			active: client.active,
 		});
 
