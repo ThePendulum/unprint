@@ -1239,7 +1239,7 @@ async function getBrowserInstance(scope, options, useProxy = false) {
 }
 
 async function closeAllBrowsers() {
-	const closingClients = Array.from(clients.values);
+	const closingClients = Array.from(clients.values());
 
 	await Promise.all(closingClients.map(async (client) => client.browser.close()));
 
