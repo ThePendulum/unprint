@@ -1247,6 +1247,12 @@ async function closeBrowser(client, options) {
 		|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
 		// this browser won't be reused
 		await client.browser.close();
+
+		events.emit('browser', {
+			action: 'close',
+			key: client.key,
+			active: client.active,
+		});
 	}
 }
 
@@ -1309,6 +1315,12 @@ async function browserRequest(url, customOptions = {}) {
 
 	return limiter.schedule(async () => {
 		const client = await getBrowserInstance(options.client, options, agent instanceof undici.ProxyAgent);
+
+		events.emit('browser', {
+			action: 'open',
+			key: client.key,
+			active: client.active,
+		});
 
 		client.active += 1;
 
