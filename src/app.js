@@ -1243,10 +1243,10 @@ async function closeAllBrowsers() {
 
 	await Promise.all(closingClients.map(async (client) => client.browser.close()));
 
-	events.emit('browser', {
-		action: 'close',
+	events.emit('browserClose', {
 		keys: closingClients.map((client) => client.key),
 		active: closingClients.reduce((acc, client) => acc + (client.active || 0), 0),
+		retired: false,
 	});
 }
 
@@ -1256,10 +1256,10 @@ async function closeBrowser(client, options) {
 		// this browser won't be reused
 		await client.browser.close();
 
-		events.emit('browser', {
-			action: 'close',
+		events.emit('browserClose', {
 			keys: [client.key],
 			active: client.active,
+			retired: !!client.retired,
 		});
 	}
 }
@@ -1324,10 +1324,10 @@ async function browserRequest(url, customOptions = {}) {
 	return limiter.schedule(async () => {
 		const client = await getBrowserInstance(options.client, options, agent instanceof undici.ProxyAgent);
 
-		events.emit('browser', {
-			action: 'open',
+		events.emit('browserOpen', {
 			keys: [client.key],
 			active: client.active,
+			retired: false,
 		});
 
 		client.active += 1;
