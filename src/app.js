@@ -1247,6 +1247,7 @@ async function closeAllBrowsers() {
 		keys: closingClients.map((client) => client.key),
 		active: closingClients.reduce((acc, client) => acc + (client.active || 0), 0),
 		retired: false,
+		clients: clients.size,
 	});
 }
 
@@ -1260,6 +1261,7 @@ async function closeBrowser(client, options) {
 			keys: [client.key],
 			active: client.active,
 			retired: !!client.retired,
+			clients: clients.size,
 		});
 	}
 }
@@ -1328,6 +1330,7 @@ async function browserRequest(url, customOptions = {}) {
 			keys: [client.key],
 			active: client.active,
 			retired: false,
+			clients: clients.size,
 		});
 
 		client.active += 1;
