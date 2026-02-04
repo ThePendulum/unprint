@@ -121,7 +121,8 @@ Options
 
 Options
 * `origin`: The hostname to prefix when it is not included in the URL (`/path`).
-* `protocol`: The protocol to use when it is not included in the URL (`:www.example.com`, default `http`).
+* `protocol`: The protocol to use when it is not included in the URL (`//www.example.com`, default `http`). Set to `null` to disable this behavior.
+* `forceProtocol`: Overwrite the input or origin protocol with the specified `protocol`.
 
 Returns the `href` from an anchor element (or any other specified target) as a string.
 

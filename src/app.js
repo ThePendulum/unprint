@@ -365,25 +365,35 @@ function queryTexts(context, selector, customOptions) {
 }
 
 function prefixUrl(urlPath, originUrl, customOptions) {
+	const options = {
+		protocol: 'https',
+		forceProtocol: false,
+		...customOptions,
+	};
+
 	if (!urlPath) {
 		return null;
 	}
 
 	if (/^http/.test(urlPath)) {
 		// this is already a complete URL
-		return urlPath;
+		return options.forceProtocol && options.protocol
+			? urlPath?.replace(/^.*?:/, `${options.protocol}:`)
+			: urlPath;
 	}
 
 	if (!originUrl) {
+		// path without protocol, i.e. //www.example.com
+		if (options.protocol && /^\/\//.test(urlPath)) {
+			return `${options.protocol}:${urlPath}`;
+		}
+
 		return null;
 	}
 
-	const options = {
-		protocol: 'https',
-		...customOptions,
-	};
-
-	const origin = originUrl?.replace(/^.*?:/, `${options.protocol}:`);
+	const origin = options.forceProtocol && options.protocol
+		? originUrl?.replace(/^.*?:/, `${options.protocol}:`)
+		: originUrl;
 
 	try {
 		return new URL(urlPath, origin).href;
