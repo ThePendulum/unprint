@@ -530,11 +530,19 @@ function extractSourceSet(sourceSet, customOptions) {
 				return -1;
 			}
 
+			if (sourceA.density && sourceB.density && sourceA.density > sourceB.density) {
+				return -1;
+			}
+
 			if (sourceA.width && sourceB.width && sourceA.width < sourceB.width) {
 				return 1;
 			}
 
 			if (sourceA.height && sourceB.height && sourceA.height < sourceB.height) {
+				return 1;
+			}
+
+			if (sourceA.density && sourceB.density && sourceA.density < sourceB.density) {
 				return 1;
 			}
 
