@@ -383,12 +383,12 @@ function prefixUrl(urlPath, originUrl, customOptions) {
 	}
 
 	if (!originUrl) {
-		// path without protocol, i.e. //www.example.com
+		// path including origin without protocol, i.e. //www.example.com
 		if (options.protocol && /^\/\//.test(urlPath)) {
 			return `${options.protocol}:${urlPath}`;
 		}
 
-		return null;
+		return urlPath;
 	}
 
 	const origin = options.forceProtocol && options.protocol
