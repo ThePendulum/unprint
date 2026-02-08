@@ -495,7 +495,7 @@ function getSourceSetDescriptor(source) {
 	return 'fallback';
 }
 
-function extractSourceSet(sourceSet, customOptions) {
+function extractSourceSet(sourceSet, customOptions = {}) {
 	if (!sourceSet) {
 		return null;
 	}
