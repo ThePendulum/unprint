@@ -271,6 +271,17 @@ Returns
 }
 ```
 
+### Helpers
+* `initialize(source, [selector], [options])` (`init`): Initialize element or HTML as unprint context
+* `initializeAll(source, [selector], [options])` (`initAll`): Initialize element or HTML as multiple contexts
+* `extractDate(string, [format], [options])`: Parse date with moment and some curation
+* `extractDateAgo(string, [options])`: Extract relative date (e.g. 4 months ago)
+* `extractDuration(timestamp, [matchRegex])`: Parse duration (e.g. 04:11:05) to seconds
+* `extractTimestamp(string)`: Parse timestamp (e.g. 4H11M5S) to seconds
+* `extractNumber(string, [options])`: Parse string as number
+* `extractSourceSet(string, [options])`: Parse source set to object
+* `formatDate(date, format, inputFormat)`: Format date with moment
+
 ### Proxy
 ```javascript
 unprint.options({ // or unprint.options();
@@ -300,7 +311,11 @@ Usage:
 * `unprint.off('trigger', callbackFn)`
 
 Triggers:
+* `query`: A query method was used
 * `requestInit`: A HTTP request is about to be made
 * `requestSuccess`: The HTTP request completed with an OK status code
 * `requestError`: The HTTP request completed with an error status code
-* `query`: A query method was used
+* `browserOpen`: A browser window was launched or used
+* `browserClose`: A browser window was closed
+* `controlSuccess`: A browser call control method succeeded
+* `controlError`: A browser call control method failed

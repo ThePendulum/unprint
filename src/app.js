@@ -1426,6 +1426,11 @@ async function browserRequest(url, customOptions = {}) {
 
 				await closeBrowser(client, options);
 
+				events.emit('controlError', {
+					...feedbackBase,
+					error,
+				});
+
 				return {
 					ok: false,
 					controlError: error.message,
@@ -1628,6 +1633,7 @@ module.exports = {
 	extractDateAgo,
 	extractDuration,
 	extractNumber,
+	extractSourceSet,
 	extractTimestamp,
 	formatDate,
 	dateConstants: {
