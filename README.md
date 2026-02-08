@@ -233,6 +233,7 @@ Options
 * `userAgent`: The default user agent header
 * `browserUserAgent`: The default user agent header for browser-like requests (`get` interface `fetch` and `browserRequest`)
 * `apiUserAgent`: The default user agent header for raw requests (`get` interface `request`)
+* `useBrowser`: Forward the call to `unprint.browser()` (see below), only for GET-requests
 
 Use Playwright with Chromium (experimental)
 * `unprint.browser(url, [options])`

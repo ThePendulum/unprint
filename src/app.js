@@ -1503,6 +1503,10 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 		url,
 	}, globalOptions, customOptions]);
 
+	if (options.useBrowser) {
+		return browserRequest(url, options);
+	}
+
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
 	const agent = getAgent(options, url);
