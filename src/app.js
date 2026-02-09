@@ -6,6 +6,7 @@ const EventEmitter = require('events');
 const undici = require('undici');
 const qs = require('node:querystring');
 const cookie = require('cookie');
+const { parseSetCookie } = require('set-cookie-parser');
 const Bottleneck = require('bottleneck');
 const moment = require('moment-timezone');
 const merge = require('deepmerge');
@@ -1122,15 +1123,21 @@ function curateHeaders(headers, options) {
 	return headers;
 }
 
-function curateCookies(headers) {
-	if (headers) {
-		const setCookie = typeof headers.get === 'function'
-			? headers.get('set-cookie')
-			: headers['set-cookie'];
+function curateCookies(res, options) {
+	if (res) {
+		const setCookie = typeof res.headers.get === 'function'
+			? res.headers.get('set-cookie')
+			: res.headers['set-cookie'];
 
 		if (setCookie) {
 			try {
-				return cookie.parseCookie(setCookie);
+				const cookies = parseSetCookie(res, { map: true, decode: false });
+
+				if (options.fullCookies) {
+					return cookies;
+				}
+
+				return Object.fromEntries(Object.entries(cookies).map(([_key, value]) => [value.name, value.value]));
 			} catch (_error) {
 				// invalid cookie
 			}
@@ -1148,7 +1155,7 @@ function curateResponse(res, data, options, { url, control, customOptions }) {
 		status: res.statusCode || res.status,
 		statusText: res.statusText,
 		headers: res.headers,
-		cookies: curateCookies(res.headers),
+		cookies: curateCookies(res, customOptions),
 		response: res,
 		res,
 		control,
@@ -1406,7 +1413,7 @@ async function browserRequest(url, customOptions = {}) {
 				status,
 				statusText,
 				headers,
-				cookies: curateCookies(headers),
+				cookies: curateCookies(res, customOptions),
 				response: res,
 				res,
 			};
@@ -1437,7 +1444,7 @@ async function browserRequest(url, customOptions = {}) {
 					status,
 					statusText,
 					headers,
-					cookies: curateCookies(headers),
+					cookies: curateCookies(res, customOptions),
 					response: res,
 					res,
 				};
@@ -1579,7 +1586,7 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 			status,
 			statusText: res.statusText,
 			headers: res.headers,
-			cookies: curateCookies(res.headers),
+			cookies: curateCookies(res, customOptions),
 			response: res,
 			res,
 		};

@@ -51,10 +51,13 @@ async function initTest() {
 		useProxy: false,
 	});
 
+	const setCookiesRes = await unprint.get(`http://127.0.0.1:${port}/cookies`);
+
 	console.log('JSON RES', jsonRes);
 	console.log('ERROR RES', errorRes);
 	console.log('COOKIES RES', cookiesRes);
 	console.log('PROXY RES', proxyRes.data);
+	console.log('SET COOKIES RES', setCookiesRes.cookies);
 
 	console.log('title', res.context.query.content('//*[contains(text(), "Test")]'));
 	console.log('date', res.context.query.date('#date', 'DD-MM-YYYY HH:mm'));
@@ -120,6 +123,13 @@ async function initServer() {
 	});
 
 	app.get('/json', (req, res) => {
+		res.send(data);
+	});
+
+	app.get('/cookies', (req, res) => {
+		res.cookie('hello', 'world', { httpOnly: true });
+		res.cookie('foo', 'bar');
+
 		res.send(data);
 	});
 
