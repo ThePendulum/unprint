@@ -1408,7 +1408,7 @@ async function browserRequest(url, customOptions = {}) {
 
 			await closeBrowser(client, options);
 
-			return {
+			return curateResponse({
 				ok: false,
 				status,
 				statusText,
@@ -1416,7 +1416,7 @@ async function browserRequest(url, customOptions = {}) {
 				cookies: curateCookies(res, customOptions),
 				response: res,
 				res,
-			};
+			}, data, options, { url, customOptions });
 		}
 
 		events.emit('requestSuccess', feedbackBase);
@@ -1572,6 +1572,10 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 		return request(newUrl, body, options, method, redirects + 1);
 	}
 
+	const data = options.interface === 'fetch'
+		? await res.text()
+		: await res.body.text();
+
 	if (!(status >= 200 && status < 300)) {
 		handleError(new Error(`HTTP response from ${url} not OK (${status} ${res.statusText})`), 'HTTP_NOT_OK');
 
@@ -1581,7 +1585,7 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 			statusText: res.statusText,
 		});
 
-		return {
+		return curateResponse({
 			ok: false,
 			status,
 			statusText: res.statusText,
@@ -1589,12 +1593,8 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 			cookies: curateCookies(res, customOptions),
 			response: res,
 			res,
-		};
+		}, data, options, { url, customOptions });
 	}
-
-	const data = options.interface === 'fetch'
-		? await res.text()
-		: await res.body.text();
 
 	events.emit('requestSuccess', {
 		...feedbackBase,
