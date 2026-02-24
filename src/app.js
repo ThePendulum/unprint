@@ -1149,7 +1149,7 @@ function curateCookies(res, options) {
 
 function curateResponse(res, data, options, { url, control, customOptions }) {
 	const base = {
-		ok: true,
+		ok: res.ok ?? true,
 		data,
 		body: data,
 		status: res.statusCode || res.status,
