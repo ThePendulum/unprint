@@ -13,9 +13,10 @@ unprint.configure({
 
 async function init() {
 	unprint.on('requestInit', (event) => console.log('INIT', event));
+	unprint.on('browserClose', (event) => console.log('CLOSE', event));
 
 	const res = await unprint.browser('https://www.google.com', {
-		useRemote: false,
+		useRemote: true,
 		async control(page) {
 			const form = await page.locator('form');
 

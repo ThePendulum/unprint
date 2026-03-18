@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const express = require('express');
+const timers = require('timers/promises');
 
 require('dotenv').config();
 
@@ -79,6 +80,26 @@ async function handleRequest(req, res, unprint, method) {
 	});
 }
 
+async function monitorBrowsers(unprint) {
+	await timers.setTimeout(10000);
+
+	const clients = unprint.getAllBrowsers();
+
+	const checkedClients = await Promise.all(Array.from(clients.values()).map(async (client) => {
+		if (new Date() - client.lastUsedAt > 300_000) { // 5 minute expiry
+			return unprint.closeBrowser(client, { client: null });
+		}
+
+		return false;
+	}));
+
+	const closedClients = checkedClients.filter(Boolean).length;
+
+	logger.info(`Closed ${closedClients}/${checkedClients.length} browsers`);
+
+	monitorBrowsers(unprint);
+}
+
 async function initServer(address, unprint) {
 	const app = express();
 	const addressComponents = typeof address === 'boolean' ? [] : String(address).split(':');
@@ -88,7 +109,7 @@ async function initServer(address, unprint) {
 
 	app.use(express.json());
 
-	app.use(async (req, res, next) => {
+	app.use(async (req, _res, next) => {
 		if (process.env.UNPRINT_KEY) {
 			if (process.env.UNPRINT_KEY.length !== req.headers['unprint-key']?.length
 			|| !crypto.timingSafeEqual(Buffer.from(process.env.UNPRINT_KEY, 'utf16le'), Buffer.from(req.headers['unprint-key'], 'utf16le'))) {
@@ -134,6 +155,8 @@ async function initServer(address, unprint) {
 
 		logger.info(`Started unprint server on ${host}:${port}`);
 	});
+
+	monitorBrowsers(unprint);
 }
 
 module.exports = initServer;

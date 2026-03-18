@@ -1222,11 +1222,13 @@ const clients = new Map();
 /* eslint-enable no-param-reassign */
 async function getBrowserInstance(scope, options, useProxy = false) {
 	const scopeKey = `${scope}_${useProxy ? 'proxy' : 'direct'}_${options.browser ? hashObject(options.browser) : 'default'}_${options.context ? hashObject(options.context) : 'default'}`;
+	const now = new Date();
 
 	if (clients.has(scopeKey)) {
 		const client = clients.get(scopeKey);
 
 		client.uses += 1;
+		client.lastUsedAt = now;
 
 		if (client.uses >= (options.clientRetirement || 20)) {
 			client.retired = true;
@@ -1262,6 +1264,8 @@ async function getBrowserInstance(scope, options, useProxy = false) {
 		active: 0,
 		uses: 1,
 		retired: false,
+		createdAt: now,
+		lastUsedAt: now,
 	};
 
 	if (scope) {
@@ -1274,12 +1278,18 @@ async function getBrowserInstance(scope, options, useProxy = false) {
 	return client;
 }
 
+function getAllBrowsers() {
+	return clients;
+}
+
 async function closeAllBrowsers() {
 	const closingClients = Array.from(clients.values());
 
 	await Promise.all(closingClients.map(async (client) => {
 		await client.context.close();
 		await client.browser.close();
+
+		clients.delete(client.key);
 	}));
 
 	events.emit('browserClose', {
@@ -1290,12 +1300,14 @@ async function closeAllBrowsers() {
 	});
 }
 
-async function closeBrowser(client, options) {
+async function closeBrowser(client, options = {}) {
 	if (options.client === null // this browser is single-use
 		|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
 		// this browser won't be reused, browser close DOES NOT automatically close context https://github.com/microsoft/playwright/issues/15163
 		await client.context.close();
 		await client.browser.close();
+
+		clients.delete(client.key);
 
 		events.emit('browserClose', {
 			keys: [client.key],
@@ -1303,7 +1315,11 @@ async function closeBrowser(client, options) {
 			retired: !!client.retired,
 			clients: clients.size,
 		});
+
+		return true;
 	}
+
+	return false;
 }
 
 function getAgent(options, url) {
@@ -1729,7 +1745,9 @@ const unprint = {
 	request,
 	browserRequest,
 	browser: browserRequest,
+	closeBrowser,
 	closeAllBrowsers,
+	getAllBrowsers,
 	initialize: init,
 	initializeAll: initAll,
 	init,
