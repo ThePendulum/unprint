@@ -81,7 +81,7 @@ async function handleRequest(req, res, unprint, method) {
 }
 
 async function monitorBrowsers(unprint) {
-	await timers.setTimeout(10000);
+	await timers.setTimeout(60_000);
 
 	const clients = unprint.getAllBrowsers();
 

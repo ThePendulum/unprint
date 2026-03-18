@@ -1408,7 +1408,7 @@ function useRemoteRequest(options, method) {
 			return true;
 		}
 
-		if (options.remote.methods.includes(method.toLowerCase())) {
+		if (options.remote.methods.includes(method.toLowerCase()) && options.useRemote !== false) {
 			return true;
 		}
 	}
