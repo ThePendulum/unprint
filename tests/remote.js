@@ -4,7 +4,7 @@ const unprint = require('../src/app');
 
 unprint.configure({
 	remote: {
-		enabled: true,
+		enable: true,
 		address: 'http://127.0.0.1:3333',
 		key: 'foobar',
 	},

@@ -42,7 +42,7 @@ function curateOptions(options) {
 	return {
 		...options,
 		remote: {
-			enabled: false,
+			enable: false,
 		},
 		useRemote: false,
 		control: options.control
@@ -124,7 +124,12 @@ async function initServer(address, unprint) {
 		});
 	});
 
-	app.listen(port, host, () => {
+	app.listen(port, host, (error) => {
+		if (error) {
+			logger.error(`Failed to start server: ${error.message}`);
+			return;
+		}
+
 		logger.info(`Started unprint server on ${host}:${port}`);
 	});
 }

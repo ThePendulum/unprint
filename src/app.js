@@ -22,7 +22,7 @@ const settings = {
 	requestTimeout: 30000,
 	userAgent: 'unprint',
 	remote: {
-		enabled: false,
+		enable: false,
 		address: 'http://127.0.0.1:3333/browser',
 		methods: ['browser'],
 	},
@@ -1380,7 +1380,7 @@ async function remoteRequest(url, method, options) {
 }
 
 function useRemoteRequest(options, method) {
-	if (options.remote.enabled) {
+	if (options.remote.enable) {
 		if (options.useRemote) {
 			return true;
 		}
