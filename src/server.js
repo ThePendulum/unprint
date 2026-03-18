@@ -135,6 +135,8 @@ async function initServer(address, unprint) {
 
 		unprint.options(curateOptions(req.body));
 
+		logger.info('Configuration updated');
+
 		res.status(204).send();
 	});
 
