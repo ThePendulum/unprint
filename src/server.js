@@ -60,9 +60,11 @@ async function handleRequest(req, res, unprint, method) {
 
 	const options = curateOptions(req.body.options);
 
-	const unprintRes = req.body.method === 'post'
-		? await unprint.post(req.body.url, req.body.data, options)
-		: await unprint[(method || req.body.method || 'get').toLowerCase()](req.body.url, options);
+	const unprintRes = await unprint.request(req.body.url, {
+		...options,
+		method: req.body.method,
+		body: req.body.data,
+	});
 
 	res.send({
 		ok: unprintRes.ok,

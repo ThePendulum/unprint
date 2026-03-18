@@ -34,6 +34,7 @@ async function initTest() {
 
 	const res = await unprint.get(`http://127.0.0.1:${port}/html`, { select: 'body', interface: 'request' });
 
+	/*
 	const jsonRes = await unprint.get(`http://127.0.0.1:${port}/json`);
 	const errorRes = await unprint.get(`http://127.0.0.1:${port}/error/404`);
 	const cookiesRes = await unprint.get(`http://127.0.0.1:${port}/json`, {
@@ -58,6 +59,7 @@ async function initTest() {
 	console.log('COOKIES RES', cookiesRes);
 	console.log('PROXY RES', proxyRes.data);
 	console.log('SET COOKIES RES', setCookiesRes.cookies);
+	*/
 
 	console.log('title', res.context.query.content('//*[contains(text(), "Test")]'));
 	console.log('date', res.context.query.date('#date', 'DD-MM-YYYY HH:mm'));
@@ -137,7 +139,12 @@ async function initServer() {
 		res.status(Number(req.params.code)).send();
 	});
 
-	const server = app.listen(port, async () => {
+	const server = app.listen(port, async (error) => {
+		if (error) {
+			console.error(error);
+			return;
+		}
+
 		const { address } = server.address();
 
 		console.log(`Test server listening on ${address}:${port}`);

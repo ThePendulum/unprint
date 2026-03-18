@@ -223,9 +223,11 @@ Extracts the CSS `url()` background from a style attribute. Alias for `query.sty
 ### HTTP request
 * `unprint.get(url, [options])`
 * `unprint.post(url, body, [options])`
-* `unprint.request(url, body, [options], [method])`
+* `unprint.request(url, [options])`
 
 Options
+* `method`: `get` (default)`, `post`, `browser` (same as `useBrowser`)
+* `body`: POST body, ignored for `get` and `browser` requests
 * `select`: Pre-query and initialize a specific element on the page.
 * `selectAll`: Pre-query and initialize multiple specific element on the page.
 * `interface`: Use undici `fetch` (browser-like, default) or `request` (raw)

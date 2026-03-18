@@ -7,12 +7,15 @@ unprint.configure({
 		enable: true,
 		address: 'http://127.0.0.1:3333',
 		key: 'foobar',
+		methods: [],
 	},
 });
 
 async function init() {
+	unprint.on('requestInit', (event) => console.log('INIT', event));
+
 	const res = await unprint.browser('https://www.google.com', {
-		useRemote: true,
+		useRemote: false,
 		async control(page) {
 			const form = await page.locator('form');
 

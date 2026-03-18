@@ -46,9 +46,10 @@ let globalOptions = {
 };
 
 const events = new EventEmitter();
+const arrayMerge = (_destinationArray, sourceArray) => sourceArray;
 
 function configure(newOptions) {
-	globalOptions = merge(globalOptions, newOptions);
+	globalOptions = merge(globalOptions, newOptions, { arrayMerge });
 }
 
 function handleError(error, code) {
@@ -1338,7 +1339,7 @@ function getAgent(options, url) {
 	});
 }
 
-async function remoteRequest(url, method, options) {
+async function remoteRequest(url, method, options, feedbackBase) {
 	const control = typeof options.control === 'function' ? options.control.toString() : null;
 
 	const res = await undici.fetch(`${options.remote.address}/request`, {
@@ -1367,6 +1368,12 @@ async function remoteRequest(url, method, options) {
 
 	const body = await res.text();
 	const data = JSON.parse(body);
+
+	events.emit('requestSuccess', {
+		...feedbackBase,
+		status: data.status,
+		statusText: data.statusText,
+	});
 
 	return curateResponse({
 		status: data.status,
@@ -1402,12 +1409,9 @@ async function browserRequest(url, customOptions = {}) {
 		url,
 	}, globalOptions, customOptions]);
 
-	if (useRemoteRequest(options, 'browser')) {
-		return remoteRequest(url, 'browser', options);
-	}
-
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 	const agent = getAgent(options, url);
+	const isRemote = useRemoteRequest(options, 'browser');
 
 	const feedbackBase = {
 		url,
@@ -1416,10 +1420,15 @@ async function browserRequest(url, customOptions = {}) {
 		concurrency,
 		isProxied: agent instanceof undici.ProxyAgent,
 		isBrowser: true,
+		isRemote,
 		options,
 	};
 
 	events.emit('requestInit', feedbackBase);
+
+	if (isRemote) {
+		return remoteRequest(url, 'browser', options, feedbackBase);
+	}
 
 	return limiter.schedule(async () => {
 		const client = await getBrowserInstance(options.client, options, agent instanceof undici.ProxyAgent);
@@ -1576,8 +1585,10 @@ function curateRequestBody(body, options) {
 	return { body };
 }
 
-async function request(url, body, customOptions = {}, method = 'GET', redirects = 0) {
+async function request(url, customOptions = {}, redirects = 0) {
 	const options = merge.all([{
+		method: 'get',
+		body: null,
 		interface: 'fetch', // fetch or request
 		timeout: 10000,
 		extract: true,
@@ -1586,17 +1597,17 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 		url,
 	}, globalOptions, customOptions]);
 
-	if (options.useBrowser) {
-		return browserRequest(url, options);
-	}
+	const method = options.method.toUpperCase(); // uppercase required by undici
+	const body = options.body;
 
-	if (useRemoteRequest(options, method)) {
-		return remoteRequest(url, method, options);
+	if (options.useBrowser || options.method === 'browser') {
+		return browserRequest(url, options);
 	}
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
 	const agent = getAgent(options, url);
+	const isRemote = useRemoteRequest(options, method);
 
 	const feedbackBase = {
 		url,
@@ -1605,10 +1616,15 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 		concurrency,
 		isProxied: agent instanceof undici.ProxyAgent,
 		isBrowser: false,
+		isRemote,
 		options,
 	};
 
 	events.emit('requestInit', feedbackBase);
+
+	if (isRemote) {
+		return remoteRequest(url, method, options, feedbackBase);
+	}
 
 	const curatedBody = curateRequestBody(body, options);
 	const curatedCookie = getCookie(options);
@@ -1681,11 +1697,18 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 }
 
 async function get(url, options) {
-	return request(url, null, options, 'GET');
+	return request(url, {
+		...options,
+		method: 'GET',
+	});
 }
 
 async function post(url, body, options) {
-	return request(url, body, options, 'POST');
+	return request(url, {
+		...options,
+		method: 'POST',
+		body,
+	});
 }
 
 function on(trigger, fn) {
