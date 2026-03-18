@@ -15,6 +15,7 @@
         "template-curly-spacing": "off",
         "object-curly-newline": "off",
 		"default-param-last": "off",
-        "max-len": [2, {"code": 300, "tabWidth": 4, "ignoreUrls": true}]
+        "max-len": [2, {"code": 300, "tabWidth": 4, "ignoreUrls": true}],
+		"import/no-extraneous-dependencies": ["error", {"devDependencies": true}]
     }
 }

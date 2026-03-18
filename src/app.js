@@ -12,12 +12,20 @@ const moment = require('moment-timezone');
 const merge = require('deepmerge');
 const hashObject = require('object-hash');
 const srcset = require('srcset');
+const argv = require('minimist')(process.argv.slice(2));
+
+const initServer = require('./server');
 
 const settings = {
 	throwErrors: false,
 	logErrors: true,
 	requestTimeout: 30000,
 	userAgent: 'unprint',
+	remote: {
+		enabled: false,
+		address: 'http://127.0.0.1:3333/browser',
+		methods: ['browser'],
+	},
 	limits: {
 		default: {
 			interval: 10,
@@ -1330,6 +1338,61 @@ function getAgent(options, url) {
 	});
 }
 
+async function remoteRequest(url, method, options) {
+	const control = typeof options.control === 'function' ? options.control.toString() : null;
+
+	const res = await undici.fetch(`${options.remote.address}/request`, {
+		method: 'post',
+		body: JSON.stringify({
+			url,
+			method,
+			options: {
+				...options,
+				control: control && control.slice(control.indexOf('{') + 1, control.lastIndexOf('}')),
+			},
+		}),
+		headers: {
+			'content-type': 'application/json',
+			'unprint-key': options.remote.key,
+		},
+	});
+
+	if (res.status !== 200) {
+		return {
+			ok: false,
+			status: res.status,
+			statusText: res.statusText,
+		};
+	}
+
+	const body = await res.text();
+	const data = JSON.parse(body);
+
+	return curateResponse({
+		status: data.status,
+		statusText: data.statusText,
+		headers: data.headers,
+	}, data.data, options, {
+		url,
+		customOptions: options,
+		control: data.control,
+	});
+}
+
+function useRemoteRequest(options, method) {
+	if (options.remote.enabled) {
+		if (options.useRemote) {
+			return true;
+		}
+
+		if (options.remote.methods.includes(method.toLowerCase())) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 async function browserRequest(url, customOptions = {}) {
 	const options = merge.all([{
 		timeout: 10000,
@@ -1338,6 +1401,10 @@ async function browserRequest(url, customOptions = {}) {
 		limiter: 'browser',
 		url,
 	}, globalOptions, customOptions]);
+
+	if (useRemoteRequest(options, 'browser')) {
+		return remoteRequest(url, 'browser', options);
+	}
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 	const agent = getAgent(options, url);
@@ -1523,6 +1590,10 @@ async function request(url, body, customOptions = {}, method = 'GET', redirects 
 		return browserRequest(url, options);
 	}
 
+	if (useRemoteRequest(options, method)) {
+		return remoteRequest(url, method, options);
+	}
+
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
 	const agent = getAgent(options, url);
@@ -1625,7 +1696,7 @@ function off(trigger, fn) {
 	events.off(trigger, fn);
 }
 
-module.exports = {
+const unprint = {
 	configure,
 	on,
 	off,
@@ -1655,3 +1726,9 @@ module.exports = {
 	options: configure,
 	query: initQueryFns(queryFns),
 };
+
+if (argv.server) {
+	initServer(argv.server, unprint);
+}
+
+module.exports = unprint;
