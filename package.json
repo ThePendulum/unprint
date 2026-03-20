@@ -1,10 +1,10 @@
 {
   "name": "unprint",
-  "version": "0.19.5",
+  "version": "0.19.6",
   "description": "Simplify common web scraping tasks while staying in control of the data.",
   "main": "src/app.js",
   "scripts": {
-	"server": "node src/server.js"
+    "server": "node src/server.js"
   },
   "repository": {
     "type": "git",
