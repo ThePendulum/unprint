@@ -1,8 +1,11 @@
 'use strict';
 
 const crypto = require('crypto');
+const WebSocket = require('ws');
 const express = require('express');
-const timers = require('timers/promises');
+const expressWs = require('express-ws');
+// const timers = require('timers/promises');
+const { chromium } = require('patchright');
 
 require('dotenv').config();
 
@@ -34,52 +37,12 @@ function log(level, ...data) {
 const logger = Object.fromEntries([
 	'info',
 	'debug',
+	'silly',
 	'error',
 	'warn',
 ].map((level) => [level, (...data) => log(level, ...data)]));
 
-function curateOptions(options) {
-	// make sure remote unprint doesn't get configured to make request to itself
-	return {
-		...options,
-		remote: {
-			enable: false,
-		},
-		useRemote: false,
-		control: options.control
-			? async function control() {}.constructor('page', 'client', options.control) // eslint-disable-line no-eval,no-new-func,no-empty-function
-			: null,
-	};
-}
-
-async function handleRequest(req, res, unprint, method) {
-	if (!req.body?.url) {
-		throw new HttpError('No URL provided', 400);
-	}
-
-	logger.info(`${(method || req.body.method || 'get').toLowerCase()} ${req.body.url}`);
-
-	const options = curateOptions(req.body.options);
-
-	const unprintRes = await unprint.request(req.body.url, {
-		...options,
-		method: req.body.method,
-		body: req.body.data,
-	});
-
-	res.send({
-		ok: unprintRes.ok,
-		status: unprintRes.status,
-		statusText: unprintRes.statusText,
-		data: unprintRes.data || null,
-		body: unprintRes.body || null,
-		html: unprintRes.context?.html || null,
-		headers: unprintRes.headers,
-		cookies: unprintRes.cookies,
-		control: unprintRes.control,
-	});
-}
-
+/*
 async function monitorBrowsers(unprint) {
 	await timers.setTimeout(60_000);
 
@@ -99,21 +62,36 @@ async function monitorBrowsers(unprint) {
 
 	monitorBrowsers(unprint);
 }
+*/
 
-async function initServer(address, unprint) {
+function closeSocket(socket, code, reason) {
+	const safeCode = code >= 1000 && code <= 1015 && code !== 1006
+		? code
+		: 1000;
+
+	try {
+		socket.close(safeCode, reason);
+	} catch (error) {
+		// probably already closed
+	}
+}
+
+async function initServer(address, _unprint) {
 	const app = express();
 	const addressComponents = typeof address === 'boolean' ? [] : String(address).split(':');
 
 	const host = addressComponents[1] ? addressComponents[0] : '127.0.0.1';
 	const port = addressComponents[1] || addressComponents[0] || 3000;
 
+	expressWs(app);
 	app.use(express.json());
 
 	app.use(async (req, _res, next) => {
-		if (process.env.UNPRINT_KEY) {
+		if (process.env.UNPRINT_KEY && req.path !== '/') {
 			if (process.env.UNPRINT_KEY.length !== req.headers['unprint-key']?.length
 			|| !crypto.timingSafeEqual(Buffer.from(process.env.UNPRINT_KEY, 'utf16le'), Buffer.from(req.headers['unprint-key'], 'utf16le'))) {
 				logger.warn(`Invalid key used by ${req.ip}`);
+
 				throw new HttpError('Invalid key', 401);
 			}
 		}
@@ -125,21 +103,6 @@ async function initServer(address, unprint) {
 		res.send(`unprint ${pkg.version}`);
 	});
 
-	app.post('/request', async (req, res) => handleRequest(req, res, unprint));
-	app.post('/browser', async (req, res) => handleRequest(req, res, unprint, 'browser'));
-
-	app.post('/options', async (req, res) => {
-		if (!req.body) {
-			throw new HttpError('No options provided', 400);
-		}
-
-		unprint.options(curateOptions(req.body));
-
-		logger.info('Configuration updated');
-
-		res.status(204).send();
-	});
-
 	app.use((error, _req, res, _next) => {
 		logger.error(error);
 
@@ -149,16 +112,65 @@ async function initServer(address, unprint) {
 		});
 	});
 
+	// monitorBrowsers(unprint);
+
+	const browser = await chromium.launchServer({
+		headless: false,
+	});
+
+	const browserEndpoint = browser.wsEndpoint();
+
+	app.ws('/browser', (clientSocket, _req) => {
+		const browserSocket = new WebSocket(browserEndpoint);
+		let queue = [];
+
+		logger.info('Client connected');
+
+		clientSocket.on('message', (data) => {
+			logger.silly(`Socket data (${browserSocket.readyState === WebSocket.OPEN ? 'sent' : 'queued'}): ${data}`);
+
+			if (browserSocket.readyState === WebSocket.OPEN) {
+				browserSocket.send(data);
+			} else {
+				queue.push(data);
+			}
+		});
+
+		browserSocket.on('open', () => {
+			logger.debug(`Browser connected, clearing ${queue.length} queue messages`);
+
+			queue.forEach((data) => browserSocket.send(data));
+			queue = [];
+
+			browserSocket.on('message', (data) => {
+				if (clientSocket.readyState === WebSocket.OPEN) {
+					clientSocket.send(data);
+				}
+			});
+		});
+
+		clientSocket.on('close', (code, reason) => {
+			closeSocket(browserSocket, code, reason);
+			logger.info('Client disconnected');
+		});
+
+		browserSocket.on('close', (code, reason) => {
+			closeSocket(clientSocket, code, reason);
+			logger.warn('Browser disconnected');
+		});
+
+		clientSocket.on('error', (error) => logger.error(`Client error: ${error}`));
+		browserSocket.on('error', (error) => logger.error(`Browser error: ${error}`));
+	});
+
 	app.listen(port, host, (error) => {
 		if (error) {
 			logger.error(`Failed to start server: ${error.message}`);
 			return;
 		}
 
-		logger.info(`Started unprint server on ${host}:${port}`);
+		logger.info(`unprint server listening on http://${host}:${port}`);
 	});
-
-	monitorBrowsers(unprint);
 }
 
 module.exports = initServer;

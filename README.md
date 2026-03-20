@@ -294,22 +294,21 @@ unprint.get({
 });
 ```
 
-### Request server
-You can run unprint as a server to execute web request remotely. This is mainly useful when you need expensive browser requests on clients with limited resources.
-If you don't need unprint-specific features, you should probably set up a dedicated proxy server instead.
+### Browser server
+You can run unprint as a Playwright browser server. This is particularly useful if the client does not have sufficient resources to run browsers locally. The browser server is not meant to replace a dedicated proxy.
 
 #### Server
 * Ensure optional dependencies are installed
-* `UNPRINT_KEY=[random] node src/app.js  --server [port|address:port]`
+* `UNPRINT_KEY=[random] node src/app.js --server [port|address:port]` (.env is supported)
 
 #### Client
 ```
 unprint.options({
 	remote: {
 		enabled: true,
-		address: '10.0.0.1:3333'
+		use: true, // use by default
+		address: 'ws://10.0.0.1:3333'
 		key: 'YOUR_UNPRINT_KEY',
-		methods: ['browser'], // browser, get, post
 	},
 });
 ```

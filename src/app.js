@@ -23,8 +23,8 @@ const settings = {
 	userAgent: 'unprint',
 	remote: {
 		enable: false,
-		address: 'http://127.0.0.1:3333/browser',
-		methods: ['browser'],
+		address: 'ws://127.0.0.1:3333/browser',
+		use: false,
 	},
 	limits: {
 		default: {
@@ -1219,8 +1219,37 @@ function curateResponse(res, data, options, { url, control, customOptions }) {
 /* eslint-disable no-param-reassign */
 const clients = new Map();
 
+async function getBrowserContext(browser, options, useProxy) {
+	return browser.newContext({
+		userAgent: options.browserUserAgent || options.userAgent,
+		...options.context,
+		...(useProxy && {
+			proxy: {
+				server: `${options.proxy.host}:${options.proxy.port}`,
+			},
+		}),
+	});
+}
+
 /* eslint-enable no-param-reassign */
-async function getBrowserInstance(scope, options, useProxy = false) {
+async function getBrowserInstance(scope, options, useProxy = false, useRemote = false) {
+	if (useRemote) {
+		const browser = await chromium.connect(options.remote.address, {
+			headers: {
+				'unprint-key': options.remote.key,
+			},
+		});
+
+		const context = await getBrowserContext(browser, options, useProxy);
+
+		return {
+			browser,
+			context,
+			active: 0, // unused, simplifies compatability with local client
+			isRemote: true,
+		};
+	}
+
 	const scopeKey = `${scope}_${useProxy ? 'proxy' : 'direct'}_${options.browser ? hashObject(options.browser) : 'default'}_${options.context ? hashObject(options.context) : 'default'}`;
 	const now = new Date();
 
@@ -1246,16 +1275,7 @@ async function getBrowserInstance(scope, options, useProxy = false) {
 		...options.browser,
 	});
 
-	const contextLauncher = browserLauncher.then((browser) => browser.newContext({
-		userAgent: options.browserUserAgent || options.userAgent,
-		...options.context,
-		...(useProxy && {
-			proxy: {
-				server: `${options.proxy.host}:${options.proxy.port}`,
-			},
-		}),
-	}));
-
+	const contextLauncher = browserLauncher.then((browser) => getBrowserContext(browser, options, useProxy));
 	const launchers = Promise.all([browserLauncher, contextLauncher]);
 
 	const client = {
@@ -1301,6 +1321,10 @@ async function closeAllBrowsers() {
 }
 
 async function closeBrowser(client, options = {}) {
+	if (client.isRemote) {
+		return false; // handled by remote
+	}
+
 	if (options.client === null // this browser is single-use
 		|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
 		// this browser won't be reused, browser close DOES NOT automatically close context https://github.com/microsoft/playwright/issues/15163
@@ -1355,62 +1379,13 @@ function getAgent(options, url) {
 	});
 }
 
-async function remoteRequest(url, method, options, feedbackBase) {
-	const control = typeof options.control === 'function' ? options.control.toString() : null;
-
-	const res = await undici.fetch(`${options.remote.address}/request`, {
-		method: 'post',
-		body: JSON.stringify({
-			url,
-			method,
-			options: {
-				...options,
-				control: control && control.slice(control.indexOf('{') + 1, control.lastIndexOf('}')),
-			},
-		}),
-		headers: {
-			'content-type': 'application/json',
-			'unprint-key': options.remote.key,
-		},
-	});
-
-	if (res.status !== 200) {
-		return {
-			ok: false,
-			status: res.status,
-			statusText: res.statusText,
-		};
-	}
-
-	const body = await res.text();
-	const data = JSON.parse(body);
-
-	events.emit('requestSuccess', {
-		...feedbackBase,
-		status: data.status,
-		statusText: data.statusText,
-	});
-
-	return curateResponse({
-		status: data.status,
-		statusText: data.statusText,
-		headers: data.headers,
-	}, data.data, options, {
-		url,
-		customOptions: options,
-		control: data.control,
-	});
-}
-
-function useRemoteRequest(options, method) {
+function useRemoteRequest(options) {
 	if (options.remote.enable) {
-		if (options.useRemote) {
-			return true;
+		if (typeof options.useRemote === 'boolean') {
+			return options.useRemote;
 		}
 
-		if (options.remote.methods.includes(method.toLowerCase()) && options.useRemote !== false) {
-			return true;
-		}
+		return options.remote.use;
 	}
 
 	return false;
@@ -1427,7 +1402,8 @@ async function browserRequest(url, customOptions = {}) {
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 	const agent = getAgent(options, url);
-	const isRemote = useRemoteRequest(options, 'browser');
+	const useProxy = agent instanceof undici.ProxyAgent;
+	const useRemote = useRemoteRequest(options);
 
 	const feedbackBase = {
 		url,
@@ -1436,18 +1412,14 @@ async function browserRequest(url, customOptions = {}) {
 		concurrency,
 		isProxied: agent instanceof undici.ProxyAgent,
 		isBrowser: true,
-		isRemote,
+		isRemote: useRemote,
 		options,
 	};
 
 	events.emit('requestInit', feedbackBase);
 
-	if (isRemote) {
-		return remoteRequest(url, 'browser', options, feedbackBase);
-	}
-
 	return limiter.schedule(async () => {
-		const client = await getBrowserInstance(options.client, options, agent instanceof undici.ProxyAgent);
+		const client = await getBrowserInstance(options.client, options, useProxy, useRemote);
 
 		events.emit('browserOpen', {
 			keys: [client.key],
@@ -1623,7 +1595,6 @@ async function request(url, customOptions = {}, redirects = 0) {
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
 	const agent = getAgent(options, url);
-	const isRemote = useRemoteRequest(options, method);
 
 	const feedbackBase = {
 		url,
@@ -1632,15 +1603,17 @@ async function request(url, customOptions = {}, redirects = 0) {
 		concurrency,
 		isProxied: agent instanceof undici.ProxyAgent,
 		isBrowser: false,
-		isRemote,
+		isRemote: false,
 		options,
 	};
 
 	events.emit('requestInit', feedbackBase);
 
+	/* only for browsers atm
 	if (isRemote) {
 		return remoteRequest(url, method, options, feedbackBase);
 	}
+	*/
 
 	const curatedBody = curateRequestBody(body, options);
 	const curatedCookie = getCookie(options);
