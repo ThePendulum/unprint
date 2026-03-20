@@ -3,6 +3,9 @@
   "version": "0.19.5",
   "description": "Simplify common web scraping tasks while staying in control of the data.",
   "main": "src/app.js",
+  "scripts": {
+	"server": "node src/server.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ThePendulum/unprint.git"
@@ -28,7 +31,6 @@
     "eslint-config-airbnb-base": "^15.0.0",
     "express-ws": "^5.0.2",
     "jsdom": "^17.0.0",
-    "minimist": "^1.2.8",
     "moment-timezone": "^0.5.34",
     "object-hash": "^3.0.0",
     "patchright": "^1.56.1",

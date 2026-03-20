@@ -12,9 +12,6 @@ const moment = require('moment-timezone');
 const merge = require('deepmerge');
 const hashObject = require('object-hash');
 const srcset = require('srcset');
-const argv = require('minimist')(process.argv.slice(2));
-
-const initServer = require('./server');
 
 const settings = {
 	throwErrors: false,
@@ -1728,9 +1725,5 @@ const unprint = {
 	options: configure,
 	query: initQueryFns(queryFns),
 };
-
-if (argv.server) {
-	initServer(unprint);
-}
 
 module.exports = unprint;

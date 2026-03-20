@@ -230,4 +230,4 @@ async function initServer() {
 	});
 }
 
-module.exports = initServer;
+initServer();

@@ -226,7 +226,7 @@ Extracts the CSS `url()` background from a style attribute. Alias for `query.sty
 * `unprint.request(url, [options])`
 
 Options
-* `method`: `get` (default)`, `post`, `browser` (same as `useBrowser`)
+* `method`: `get` (default), `post`, `browser` (same as `useBrowser`)
 * `body`: POST body, ignored for `get` and `browser` requests
 * `select`: Pre-query and initialize a specific element on the page.
 * `selectAll`: Pre-query and initialize multiple specific element on the page.
@@ -299,7 +299,7 @@ You can run unprint as a Playwright browser server. This is particularly useful 
 
 #### Server
 * Ensure optional dependencies are installed
-* `node src/app.js --server [port|address:port]`
+* `npm start server` or `node src/server.js`
 
 Environment variables (optional, .env is supported):
 * `UNPRINT_HOST`: Server host, default `127.0.0.1:3333`
@@ -324,19 +324,6 @@ If the remote is enabled, you can utilize it for individual requests regardless 
 unprint.get([url], {
 	useRemote: true,
 })
-```
-
-#### API
-```
-POST /request {
-	url: 'https://example.com', // required
-	method: 'get', // default get, post, browser
-	options: {}, // request options as passed to native method
-}
-
-POST /browser // same as /request, but with browser method implied
-
-* `options.control` is passed as a function body string, i.e. `control: "return 'hello world';"`
 ```
 
 ### Helpers
