@@ -16,8 +16,8 @@ const srcset = require('srcset');
 const settings = {
 	throwErrors: false,
 	logErrors: true,
-	requestTimeout: 30000,
 	userAgent: 'unprint',
+	timeout: 60_000,
 	remote: {
 		enable: false,
 		address: 'ws://127.0.0.1:3333/browser',
@@ -1283,6 +1283,8 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 	try {
 		const { browser, context } = await launchers;
 
+		context.setDefaultNavigationTimeout(options.timeout);
+
 		client.browser = browser;
 		client.context = context;
 	} catch (error) {
@@ -1385,7 +1387,7 @@ function useRemoteRequest(options) {
 
 async function browserRequest(url, customOptions = {}) {
 	const options = merge.all([{
-		timeout: 10000,
+		timeout: 60000,
 		extract: true,
 		client: 'main',
 		limiter: 'browser',
@@ -1578,7 +1580,7 @@ async function request(url, customOptions = {}, redirects = 0) {
 		method: 'get',
 		body: null,
 		interface: 'fetch', // fetch or request
-		timeout: 10000,
+		timeout: 60000,
 		extract: true,
 		followRedirects: true,
 		maxRedirects: 3,
