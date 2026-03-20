@@ -1280,10 +1280,16 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 		clients.set(scopeKey, client);
 	}
 
-	const { browser, context } = await launchers;
+	try {
+		const { browser, context } = await launchers;
 
-	client.browser = browser;
-	client.context = context;
+		client.browser = browser;
+		client.context = context;
+	} catch (error) {
+		clients.delete(scopeKey);
+
+		return error;
+	}
 
 	return client;
 }
@@ -1405,7 +1411,7 @@ async function browserRequest(url, customOptions = {}) {
 	events.emit('requestInit', feedbackBase);
 
 	return limiter.schedule(async () => {
-		const client = await getBrowserInstance(options.client, options, useProxy, useRemote).catch((error) => error);
+		const client = await getBrowserInstance(options.client, options, useProxy, useRemote);
 
 		if (client instanceof Error) {
 			return {
