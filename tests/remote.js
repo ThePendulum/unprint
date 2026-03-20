@@ -35,6 +35,12 @@ async function init() {
 
 	console.log('control', res.control);
 	console.log('form', form);
+
+	await unprint.browser('https://www.bing.com', {
+		useRemote: true,
+	});
+
+	await unprint.closeAllBrowsers();
 }
 
 init();

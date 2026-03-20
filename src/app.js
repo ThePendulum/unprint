@@ -1309,7 +1309,6 @@ async function closeAllBrowsers() {
 
 async function closeBrowser(client, options = {}) {
 	if (options.client === null // this browser is single-use
-		|| client.isRemote
 		|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
 		// this browser won't be reused, browser close DOES NOT automatically close context https://github.com/microsoft/playwright/issues/15163
 		await client.context.close();

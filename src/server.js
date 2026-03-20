@@ -59,7 +59,7 @@ function closeSocket(socket, code, reason) {
 
 async function getClient() {
 	const browser = await chromium.launchServer({
-		headless: false,
+		headless: process.env.UNPRINT_HEADLESS !== '0',
 	});
 
 	const endpoint = browser.wsEndpoint();

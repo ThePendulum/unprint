@@ -306,6 +306,7 @@ Environment variables (optional, .env is supported):
 * `UNPRINT_KEY`: Key required for authentication
 * `UNPRINT_MEMORY_LIMIT`: Memory threshold at which to cycle the browser in MB
 * `UNPRINT_LOG_LEVEL`: Verbosity of the console output, `info` (default), `debug`, `silly`, `warn`, `error`
+* `UNPRINT_HEADLESS`: Hide the browser window, `1` (yes, default) or `0` (no)
 
 #### Client
 ```
