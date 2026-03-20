@@ -299,7 +299,13 @@ You can run unprint as a Playwright browser server. This is particularly useful 
 
 #### Server
 * Ensure optional dependencies are installed
-* `UNPRINT_KEY=[random] node src/app.js --server [port|address:port]` (.env is supported)
+* `node src/app.js --server [port|address:port]`
+
+Environment variables (optional, .env is supported):
+* `UNPRINT_HOST`: Server host, default `127.0.0.1:3333`
+* `UNPRINT_KEY`: Key required for authentication
+* `UNPRINT_MEMORY_LIMIT`: Memory threshold at which to cycle the browser in MB
+* `UNPRINT_LOG_LEVEL`: Verbosity of the console output, `info` (default), `debug`, `silly`, `warn`, `error`
 
 #### Client
 ```

@@ -1233,24 +1233,7 @@ async function getBrowserContext(browser, options, useProxy) {
 
 /* eslint-enable no-param-reassign */
 async function getBrowserInstance(scope, options, useProxy = false, useRemote = false) {
-	if (useRemote) {
-		const browser = await chromium.connect(options.remote.address, {
-			headers: {
-				'unprint-key': options.remote.key,
-			},
-		});
-
-		const context = await getBrowserContext(browser, options, useProxy);
-
-		return {
-			browser,
-			context,
-			active: 0, // unused, simplifies compatability with local client
-			isRemote: true,
-		};
-	}
-
-	const scopeKey = `${scope}_${useProxy ? 'proxy' : 'direct'}_${options.browser ? hashObject(options.browser) : 'default'}_${options.context ? hashObject(options.context) : 'default'}`;
+	const scopeKey = `${scope}_${useRemote ? 'remote' : 'local'}_${useProxy ? 'proxy' : 'direct'}_${options.browser ? hashObject(options.browser) : 'default'}_${options.context ? hashObject(options.context) : 'default'}`;
 	const now = new Date();
 
 	if (clients.has(scopeKey)) {
@@ -1270,10 +1253,16 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 	}
 
 	// if we await here, we create a race condition, and a second call to getBrowserInstance would launch another browser that will overwrite the first one
-	const browserLauncher = chromium.launch({
-		headless: true,
-		...options.browser,
-	});
+	const browserLauncher = useRemote
+		? chromium.connect(options.remote.address, {
+			headers: {
+				'unprint-key': options.remote.key,
+			},
+		})
+		: chromium.launch({
+			headless: true,
+			...options.browser,
+		});
 
 	const contextLauncher = browserLauncher.then((browser) => getBrowserContext(browser, options, useProxy));
 	const launchers = Promise.all([browserLauncher, contextLauncher]);
@@ -1284,6 +1273,7 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 		active: 0,
 		uses: 1,
 		retired: false,
+		isRemote: useRemote,
 		createdAt: now,
 		lastUsedAt: now,
 	};
@@ -1321,11 +1311,8 @@ async function closeAllBrowsers() {
 }
 
 async function closeBrowser(client, options = {}) {
-	if (client.isRemote) {
-		return false; // handled by remote
-	}
-
 	if (options.client === null // this browser is single-use
+		|| client.isRemote
 		|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
 		// this browser won't be reused, browser close DOES NOT automatically close context https://github.com/microsoft/playwright/issues/15163
 		await client.context.close();
@@ -1721,6 +1708,7 @@ const unprint = {
 	closeBrowser,
 	closeAllBrowsers,
 	getAllBrowsers,
+	getBrowserInstance,
 	initialize: init,
 	initializeAll: initAll,
 	init,
@@ -1742,7 +1730,7 @@ const unprint = {
 };
 
 if (argv.server) {
-	initServer(argv.server, unprint);
+	initServer(unprint);
 }
 
 module.exports = unprint;
