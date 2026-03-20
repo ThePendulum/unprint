@@ -1250,7 +1250,7 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 	}
 
 	// if we await here, we create a race condition, and a second call to getBrowserInstance would launch another browser that will overwrite the first one
-	const browserLauncher = useRemote
+	const launchers = (useRemote
 		? chromium.connect(options.remote.address, {
 			headers: {
 				'unprint-key': options.remote.key,
@@ -1259,10 +1259,11 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 		: chromium.launch({
 			headless: true,
 			...options.browser,
-		});
+		})).then(async (browser) => {
+			const context = await getBrowserContext(browser, options, useProxy);
 
-	const contextLauncher = browserLauncher.then((browser) => getBrowserContext(browser, options, useProxy));
-	const launchers = Promise.all([browserLauncher, contextLauncher]);
+			return { browser, context };
+		});
 
 	const client = {
 		key: scopeKey,
@@ -1279,8 +1280,10 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 		clients.set(scopeKey, client);
 	}
 
-	client.browser = await browserLauncher;
-	client.context = await contextLauncher;
+	const { browser, context } = await launchers;
+
+	client.browser = browser;
+	client.context = context;
 
 	return client;
 }
@@ -1402,7 +1405,15 @@ async function browserRequest(url, customOptions = {}) {
 	events.emit('requestInit', feedbackBase);
 
 	return limiter.schedule(async () => {
-		const client = await getBrowserInstance(options.client, options, useProxy, useRemote);
+		const client = await getBrowserInstance(options.client, options, useProxy, useRemote).catch((error) => error);
+
+		if (client instanceof Error) {
+			return {
+				ok: false,
+				status: null,
+				statusText: client.message,
+			};
+		}
 
 		events.emit('browserOpen', {
 			keys: [client.key],

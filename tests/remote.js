@@ -10,7 +10,7 @@ unprint.configure({
 	remote: {
 		enable: true,
 		use: false,
-		address: 'ws://127.0.0.1:3333/browser',
+		address: 'ws://127.0.0.111:3333/browser',
 		key,
 	},
 });
@@ -27,7 +27,7 @@ async function init() {
 	});
 
 	if (!res.ok) {
-		console.log(res);
+		console.log('not ok', res);
 		return;
 	}
 
