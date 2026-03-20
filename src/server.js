@@ -9,8 +9,9 @@ const timers = require('timers/promises');
 const { chromium } = require('patchright');
 const pidUsage = require('pidusage');
 const pidTree = require('pidtree');
+const { hri } = require('human-readable-ids');
 
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 const pkg = require('../package.json');
 
@@ -35,11 +36,11 @@ const logLevels = [
 
 const logLevel = process.env.UNPRINT_LOG_LEVEL || 'info';
 
-function log(level, ...data) {
+function log(level, data, clientId) {
 	if (logLevels.indexOf(level) <= logLevels.indexOf(logLevel)) {
 		const now = new Date();
 
-		console.log(`${now.toISOString()} [${level.slice(0, 5).padStart(5, ' ')}] ${data.join(' ')}`);
+		console.log(`${now.toISOString()} [${level.slice(0, 5).padStart(5, ' ')}] ${clientId ? `<${clientId}> ` : ''}${typeof data === 'string' ? data : JSON.stringify(data)}`);
 	}
 }
 
@@ -169,31 +170,42 @@ async function initServer() {
 		const currentClient = client;
 		const browserSocket = new WebSocket(currentClient.endpoint);
 
+		const clientId = hri.random();
 		let queue = [];
 
-		logger.info('Client connected');
+		logger.info('Client connected', clientId);
 
 		currentClient.active += 1;
 
-		clientSocket.on('message', (data) => {
-			logger.silly(`Socket data (${browserSocket.readyState === WebSocket.OPEN ? 'sent' : 'queued'}): ${data}`);
+		clientSocket.on('message', (message) => {
+			logger.debug(`Socket data (${browserSocket.readyState === WebSocket.OPEN ? 'sent' : 'queued'}): ${message}`, clientId);
 
 			if (browserSocket.readyState === WebSocket.OPEN) {
-				browserSocket.send(data);
+				browserSocket.send(message);
 			} else {
-				queue.push(data);
+				queue.push(message);
+			}
+
+			try {
+				const data = JSON.parse(message);
+
+				if (data.method === 'goto' && data.params) {
+					logger.info(`Goto ${data.params.url}`, clientId);
+				}
+			} catch (error) {
+				// no action needed
 			}
 		});
 
 		browserSocket.on('open', () => {
-			logger.debug(`Browser connected, clearing ${queue.length} queue messages`);
+			logger.debug(`Browser connected, clearing ${queue.length} queue messages`, clientId);
 
-			queue.forEach((data) => browserSocket.send(data));
+			queue.forEach((message) => browserSocket.send(message));
 			queue = [];
 
-			browserSocket.on('message', (data) => {
+			browserSocket.on('message', (message) => {
 				if (clientSocket.readyState === WebSocket.OPEN) {
-					clientSocket.send(data);
+					clientSocket.send(message);
 				}
 			});
 		});
@@ -203,11 +215,11 @@ async function initServer() {
 
 			currentClient.active -= 1;
 
-			logger.info('Client disconnected');
+			logger.info('Client disconnected', clientId);
 
 			if (currentClient.isRetired && currentClient.active === 0) {
 				await currentClient.browser.close();
-				logger.info('Browser retired');
+				logger.info(`Browser retired by ${clientId}`);
 			}
 		});
 
