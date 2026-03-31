@@ -1167,7 +1167,7 @@ function curateResponse(res, data, options, { url, control, customOptions }) {
 		control,
 	};
 
-	if (['application/json', 'application/javascript'].some((type) => {
+	if (res.headers && ['application/json', 'application/javascript'].some((type) => {
 		if (typeof res.headers.get === 'function') {
 			return res.headers.get('content-type')?.includes(type);
 		}
