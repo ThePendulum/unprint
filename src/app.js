@@ -1130,7 +1130,7 @@ function curateHeaders(headers, options) {
 }
 
 function curateCookies(res, options) {
-	if (res) {
+	if (res?.headers) {
 		const setCookie = typeof res.headers.get === 'function'
 			? res.headers.get('set-cookie')
 			: res.headers['set-cookie'];
