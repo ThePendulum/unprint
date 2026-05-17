@@ -1225,10 +1225,10 @@ async function getBrowserContext(browser, options, useProxy) {
 				server: `${options.proxy.host}:${options.proxy.port}`,
 			},
 		}),
-		extraHTTPHeaders: {
+		extraHTTPHeaders: curateHeaders({
 			...options.headers,
 			cookie: getCookie(options),
-		},
+		}, options),
 	});
 }
 
