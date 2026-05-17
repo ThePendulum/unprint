@@ -299,7 +299,7 @@ You can run unprint as a Playwright browser server. This is particularly useful 
 
 #### Server
 * Ensure optional dependencies are installed
-* `npm start server` or `node src/server.js`
+* `npm run server` or `node src/server.js`
 
 Environment variables (optional, .env is supported):
 * `UNPRINT_HOST`: Server host, default `127.0.0.1:3333`
