@@ -1286,12 +1286,13 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 	}
 
 	try {
-		const { browser, context } = await launchers;
+		// const { browser, context } = await launchers;
+		const { browser } = await launchers;
 
-		context.setDefaultNavigationTimeout(options.timeout);
+		// context.setDefaultNavigationTimeout(options.timeout);
 
 		client.browser = browser;
-		client.context = context;
+		// client.context = context;
 	} catch (error) {
 		clients.delete(scopeKey);
 
@@ -1309,7 +1310,7 @@ async function closeAllBrowsers() {
 	const closingClients = Array.from(clients.values());
 
 	await Promise.all(closingClients.map(async (client) => {
-		await client.context.close();
+		await client.context?.close();
 		await client.browser.close();
 
 		clients.delete(client.key);
@@ -1327,7 +1328,7 @@ async function closeBrowser(client, options = {}) {
 	if (options.client === null // this browser is single-use
 		|| (client.retired && client.active === 0)) { // this browser is retired to minimize garbage build-up
 		// this browser won't be reused, browser close DOES NOT automatically close context https://github.com/microsoft/playwright/issues/15163
-		await client.context.close();
+		await client.context?.close();
 		await client.browser.close();
 
 		clients.delete(client.key);
