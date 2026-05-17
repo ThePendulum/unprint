@@ -1225,6 +1225,10 @@ async function getBrowserContext(browser, options, useProxy) {
 				server: `${options.proxy.host}:${options.proxy.port}`,
 			},
 		}),
+		extraHTTPHeaders: {
+			...options.headers,
+			cookie: getCookie(options),
+		},
 	});
 }
 
@@ -1259,10 +1263,11 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 		: chromium.launch({
 			headless: true,
 			...options.browser,
-		})).then(async (browser) => {
-			const context = await getBrowserContext(browser, options, useProxy);
+		})).then(async (browser) => { // eslint-disable-line arrow-body-style
+			// legacy
+			// const context = await getBrowserContext(browser, options, useProxy);
 
-			return { browser, context };
+			return { browser };
 		});
 
 	const client = {
@@ -1432,19 +1437,18 @@ async function browserRequest(url, customOptions = {}) {
 
 		client.active += 1;
 
-		const page = await client.context.newPage();
-
-		await page.setExtraHTTPHeaders(curateHeaders({
-			'user-agent': options.browserUserAgent || options.userAgent,
-			...options.headers,
-			cookie: getCookie(options),
-		}, options));
+		const context = await getBrowserContext(client.browser, options, useProxy);
+		const page = await context.newPage();
 
 		const res = await page.goto(url, {
 			...options.page,
 		}).catch((error) => error);
 
 		if (res instanceof Error) {
+			await context.close();
+			await page.close();
+			await closeBrowser(client, options);
+
 			return {
 				ok: false,
 				status: null,
@@ -1469,6 +1473,8 @@ async function browserRequest(url, customOptions = {}) {
 
 			client.active -= 1;
 
+			await page.close();
+			await context.close();
 			await closeBrowser(client, options);
 
 			return curateResponse({
@@ -1494,6 +1500,8 @@ async function browserRequest(url, customOptions = {}) {
 			} catch (error) {
 				client.active -= 1;
 
+				await page.close();
+				await context.close();
 				await closeBrowser(client, options);
 
 				events.emit('controlError', {
@@ -1519,6 +1527,7 @@ async function browserRequest(url, customOptions = {}) {
 		const data = await page.content();
 
 		await page.close();
+		await context.close();
 
 		events.emit('requestSuccess', {
 			...feedbackBase,
