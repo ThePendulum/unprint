@@ -1434,18 +1434,11 @@ async function browserRequest(url, customOptions = {}) {
 
 		const page = await client.context.newPage();
 
-		await page.route(url, async (route) => {
-			const headers = route.request().headers();
-
-			route.continue({
-				headers: curateHeaders({
-					...headers,
-					'user-agent': options.browserUserAgent || options.userAgent,
-					...options.headers,
-					cookie: getCookie(options),
-				}, options),
-			});
-		});
+		await page.setExtraHttpHeaders(curateHeaders({
+			'user-agent': options.browserUserAgent || options.userAgent,
+			...options.headers,
+			cookie: getCookie(options),
+		}, options));
 
 		const res = await page.goto(url, {
 			...options.page,
