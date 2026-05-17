@@ -1434,7 +1434,7 @@ async function browserRequest(url, customOptions = {}) {
 
 		const page = await client.context.newPage();
 
-		await page.setExtraHttpHeaders(curateHeaders({
+		await page.setExtraHTTPHeaders(curateHeaders({
 			'user-agent': options.browserUserAgent || options.userAgent,
 			...options.headers,
 			cookie: getCookie(options),
