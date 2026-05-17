@@ -1,6 +1,6 @@
 {
   "name": "unprint",
-  "version": "0.19.15",
+  "version": "0.19.16",
   "description": "Simplify common web scraping tasks while staying in control of the data.",
   "main": "src/app.js",
   "scripts": {
