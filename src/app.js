@@ -1654,7 +1654,7 @@ async function request(url, customOptions = {}, redirects = 0) {
 	) {
 		const newUrl = new URL(res.headers.location, url).toString();
 
-		return request(newUrl, body, options, method, redirects + 1);
+		return request(newUrl, customOptions, redirects + 1);
 	}
 
 	const data = options.interface === 'fetch'
