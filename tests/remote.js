@@ -1,8 +1,6 @@
-'use strict';
+// import { chromium } from 'patchright';
 
-// const { chromium } = require('patchright');
-
-const unprint = require('../src/app');
+import unprint from '../src/app.js';
 
 const key = 'foobar';
 

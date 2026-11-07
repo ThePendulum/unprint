@@ -1,17 +1,15 @@
-'use strict';
-
-const { JSDOM, VirtualConsole } = require('jsdom');
-const { chromium } = require('patchright');
-const EventEmitter = require('events');
-const undici = require('undici');
-const qs = require('node:querystring');
-const cookie = require('cookie');
-const { parseSetCookie } = require('set-cookie-parser');
-const Bottleneck = require('bottleneck');
-const moment = require('moment-timezone');
-const merge = require('deepmerge');
-const hashObject = require('object-hash');
-const srcset = require('srcset');
+import { JSDOM, VirtualConsole } from 'jsdom';
+import { chromium } from 'patchright';
+import EventEmitter from 'node:events';
+import * as undici from 'undici';
+import qs from 'node:querystring';
+import * as cookie from 'cookie';
+import { parseSetCookie } from 'set-cookie-parser';
+import Bottleneck from 'bottleneck';
+import moment from 'moment-timezone';
+import merge from 'deepmerge';
+import hashObject from 'object-hash';
+import { parseSrcset } from 'srcset';
 
 const settings = {
 	throwErrors: false,
@@ -507,7 +505,7 @@ function extractSourceSet(sourceSet, customOptions = {}) {
 		return null;
 	}
 
-	const sources = srcset.parse(sourceSet)
+	const sources = parseSrcset(sourceSet)
 		.map((source) => {
 			if (source.url) {
 				return {
@@ -578,32 +576,32 @@ function querySourceSets(context, selector, attr = 'srcset', customOptions = {})
 	return sourceSets.map((sourceSet) => extractSourceSet(sourceSet, customOptions));
 }
 
-function removeStyleFunctionSpaces(el) {
-	// jsdom appears to have a bug where it ignores inline CSS attributes set to a function() containing spaces, e.g. url( image.png )
-	el.setAttribute('style', el.getAttribute('style')
-		.replace(/\(\s+(.*)\s+\)/g, (match, cssArgs) => `(${cssArgs})`)
-		.replace(/\)[\w\s/-]+;/g, ');'));
+function getStyleValues(element) {
+	// iterating the declaration only yields longhands, include the declared shorthands, e.g. background or margin
+	const declaredProperties = Array.from(element.getAttribute('style')?.matchAll(/(?:^|;)\s*([\w-]+)\s*:/g) || [], (match) => match[1].toLowerCase());
+
+	return Object.fromEntries(Array.from(new Set([...declaredProperties, ...element.style]))
+		.map((property) => [property, element.style.getPropertyValue(property)])
+		.filter(([_property, value]) => value));
+}
+
+function extractStyleUrl(style) {
+	// jsdom serializes URLs as url("...")
+	return style?.match(/url\((['"]?)(.*?)\1\)/)?.[2] || null;
 }
 
 function queryStyle(context, selector, customOptions) {
 	const options = {
 		attribute: 'style',
-		attemptBugfix: true,
 		...customOptions,
 	};
 
 	const element = queryElement(context, selector, options);
 
-	if (element) {
-		if (options.attemptBugfix) {
-			removeStyleFunctionSpaces(element, options);
-		}
-
-		if (element.style) {
-			return options.styleAttribute
-				? element.style.getPropertyValue(options.styleAttribute)
-				: element.style._values;
-		}
+	if (element?.style) {
+		return options.styleAttribute
+			? element.style.getPropertyValue(options.styleAttribute)
+			: getStyleValues(element);
 	}
 
 	return null;
@@ -616,12 +614,10 @@ function queryStyles(context, selector, customOptions) {
 	};
 
 	const elStyles = queryElements(context, selector, options).map((element) => {
-		removeStyleFunctionSpaces(element);
-
 		if (element.style) {
 			return options.styleAttribute
 				? element.style.getPropertyValue(options.styleAttribute)
-				: element.style._values;
+				: getStyleValues(element);
 		}
 
 		return null;
@@ -642,9 +638,7 @@ function queryStyleUrl(context, selector, styleAttribute, customOptions) {
 		return null;
 	}
 
-	const url = style.match(/url\(['"]?(.*)['"]?\)/)?.[1];
-
-	return url;
+	return extractStyleUrl(style);
 }
 
 function queryStyleUrls(context, selector, styleAttribute, customOptions) {
@@ -654,7 +648,7 @@ function queryStyleUrls(context, selector, styleAttribute, customOptions) {
 	};
 
 	const styles = queryStyles(context, selector, options);
-	const urls = styles.map((style) => style.match(/url\(['"]?(.*)['"]?\)/)?.[1])?.filter(Boolean);
+	const urls = styles.map((style) => extractStyleUrl(style)).filter(Boolean);
 
 	return urls;
 }
@@ -1747,4 +1741,5 @@ const unprint = {
 	query: initQueryFns(queryFns),
 };
 
-module.exports = unprint;
+export default unprint;
+export { unprint as 'module.exports' }; // require('unprint') returns unprint rather than the module namespace

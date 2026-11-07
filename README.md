@@ -5,7 +5,9 @@ unprint is a web scraping utility built around JSDOM, providing convenience meth
 `npm install unprint`
 
 ## Usage
-`const unprint = require('unprint');`
+`import unprint from 'unprint';`
+
+CommonJS (Node.js 22.12+): `const unprint = require('unprint');`
 
 ### Global options
 ```
@@ -203,7 +205,6 @@ Returns the parsed JSON content of an element as an object.
 
 Options
 * `styleAttribute`: the CSS style attribute to extract, returns an object with all properties by default.
-* `attemptBugfix`: Attempts to fix/bypass JSDOM quirks related in particular to style attributes containing `url()`, at the risk of losing some surrounding definitions (e.g. `url() 0 0 no-repeat;` may become `url()`. Try disabling this property if you require those definitions; it may break the attribute entirely, though.
 
 Returns the CSS style attributes of an element as an object.
 

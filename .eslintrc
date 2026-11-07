@@ -1,7 +1,7 @@
 {
     "extends": "airbnb-base",
     "parserOptions": {
-        "sourceType": "script",
+        "sourceType": "module",
 		"ecmaVersion": "latest"
     },
     "rules": {
@@ -16,6 +16,8 @@
         "object-curly-newline": "off",
 		"default-param-last": "off",
         "max-len": [2, {"code": 300, "tabWidth": 4, "ignoreUrls": true}],
-		"import/no-extraneous-dependencies": ["error", {"devDependencies": true}]
+		"import/no-extraneous-dependencies": ["error", {"devDependencies": true}],
+		"import/extensions": ["error", "always", {"ignorePackages": true}],
+		"import/no-unresolved": ["error", {"ignore": ["^cookie$"]}]
     }
 }

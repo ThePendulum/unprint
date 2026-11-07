@@ -2,7 +2,12 @@
   "name": "unprint",
   "version": "0.19.20",
   "description": "Simplify common web scraping tasks while staying in control of the data.",
+  "type": "module",
   "main": "src/app.js",
+  "exports": "./src/app.js",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "server": "node src/server.js"
   },
@@ -23,29 +28,29 @@
   "homepage": "https://github.com/ThePendulum/unprint#readme",
   "dependencies": {
     "bottleneck": "^2.19.5",
-    "cookie": "^1.1.1",
+    "cookie": "^2.0.2",
     "deepmerge": "^4.2.2",
-    "dotenv": "^17.3.1",
-    "eslint": "^8.17.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-airbnb-base": "^15.0.0",
+    "dotenv": "^18.0.9",
     "express-ws": "^5.0.2",
     "human-readable-ids": "^1.0.4",
-    "jsdom": "^17.0.0",
-    "moment-timezone": "^0.5.34",
+    "jsdom": "^31.0.0",
+    "moment-timezone": "^0.6.6",
     "object-hash": "^3.0.0",
     "patchright": "^1.64.3",
-    "pidtree": "^0.6.0",
+    "pidtree": "^1.0.0",
     "pidusage": "^4.0.1",
     "set-cookie-parser": "^3.0.1",
-    "srcset": "^4.0.0",
+    "srcset": "^5.0.3",
     "tunnel": "^0.0.6",
-    "undici": "^7.18.2",
+    "undici": "^8.12.4",
     "ws": "^8.19.0"
   },
   "devDependencies": {
     "@playwright/test": "~1.64.0",
-    "@types/node": "^24.10.0",
+    "@types/node": "^26.6.6",
+    "eslint": "^8.17.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-airbnb-base": "^15.0.0",
     "express": "^5.2.1"
   },
   "optionalDependencies": {

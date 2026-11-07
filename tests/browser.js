@@ -1,6 +1,4 @@
-'use strict';
-
-const unprint = require('../src/app');
+import unprint from '../src/app.js';
 
 unprint.options({ // or unprint.options();
 	proxy: {

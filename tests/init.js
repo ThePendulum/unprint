@@ -1,11 +1,11 @@
-'use strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import express from 'express';
+// import unprint from 'unprint';
 
-const path = require('path');
-const express = require('express');
-// const unprint = require('unprint');
+import unprint from '../src/app.js';
 
-const unprint = require('../src/app');
-const data = require('./data.json');
+const data = JSON.parse(fs.readFileSync(new URL('./data.json', import.meta.url)));
 
 const port = process.env.PORT || 3101;
 
@@ -121,7 +121,7 @@ async function initServer() {
 	});
 
 	app.get('/html', (req, res) => {
-		res.sendFile(path.resolve(__dirname, 'index.html'));
+		res.sendFile(path.resolve(import.meta.dirname, 'index.html'));
 	});
 
 	app.get('/json', (req, res) => {

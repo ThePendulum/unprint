@@ -1,19 +1,19 @@
-'use strict';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import WebSocket from 'ws';
+import express from 'express';
+import expressWs from 'express-ws';
+import timers from 'node:timers/promises';
+import { chromium } from 'patchright';
+import pidUsage from 'pidusage';
+import pidTree from 'pidtree';
+import { hri } from 'human-readable-ids';
+import dotenv from 'dotenv';
 
-const crypto = require('crypto');
-const os = require('os');
-const WebSocket = require('ws');
-const express = require('express');
-const expressWs = require('express-ws');
-const timers = require('timers/promises');
-const { chromium } = require('patchright');
-const pidUsage = require('pidusage');
-const pidTree = require('pidtree');
-const { hri } = require('human-readable-ids');
+dotenv.config({ quiet: true });
 
-require('dotenv').config({ quiet: true });
-
-const pkg = require('../package.json');
+const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url))); // eslint 8 can't parse import attributes
 
 const memoryLimit = Number(process.env.UNPRINT_MEMORY_LIMIT) || Math.round(Math.max(1024, (os.totalmem() / 1024 / 1024) * 0.3)); // MB, aim for 30% of total available
 
