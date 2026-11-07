@@ -34,7 +34,7 @@
     "jsdom": "^17.0.0",
     "moment-timezone": "^0.5.34",
     "object-hash": "^3.0.0",
-    "patchright": "^1.56.1",
+    "patchright": "^1.64.3",
     "pidtree": "^0.6.0",
     "pidusage": "^4.0.1",
     "set-cookie-parser": "^3.0.1",
@@ -44,7 +44,7 @@
     "ws": "^8.19.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.1",
+    "@playwright/test": "~1.64.0",
     "@types/node": "^24.10.0",
     "express": "^5.2.1"
   },
