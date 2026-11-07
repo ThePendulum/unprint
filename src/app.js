@@ -1218,7 +1218,7 @@ const clients = new Map();
 
 async function getBrowserContext(browser, options, useProxy) {
 	return browser.newContext({
-		userAgent: options.browserUserAgent || options.userAgent,
+		userAgent: options.browserUserAgent || `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${browser.version().split('.')[0]}.0.0.0 Safari/537.36`,
 		...options.context,
 		...(useProxy && {
 			proxy: {
@@ -1625,7 +1625,7 @@ async function request(url, customOptions = {}, redirects = 0) {
 
 	const headers = curateHeaders({
 		...curatedBody.headers,
-		'user-agent': (options.interface === 'fetch' ? options.browserUserAgent : options.apiUserAgent) || options.userAgent,
+		'user-agent': (options.interface === 'fetch' ? options.fetchUserAgent : options.apiUserAgent) || options.userAgent,
 		...options.headers,
 		cookie: curatedCookie,
 	}, options);

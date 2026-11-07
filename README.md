@@ -233,7 +233,8 @@ Options
 * `interface`: Use undici `fetch` (browser-like, default) or `request` (raw)
 * `form`: Encode POST body as urlencoded form rather than JSON
 * `userAgent`: The default user agent header
-* `browserUserAgent`: The default user agent header for browser-like requests (`get` interface `fetch` and `browserRequest`)
+* `browserUserAgent`: The default user agent header for browser requests, defaults to installed browser
+* `fetchUserAgent`: The default user agent header for browser-like requests (`get` interface `fetch`)
 * `apiUserAgent`: The default user agent header for raw requests (`get` interface `request`)
 * `useBrowser`: Forward the call to `unprint.browser()` (see below), only for GET-requests
 * `fullCookies`: Return cookie metadata in `res.cookies`, instead of just values
