@@ -29,7 +29,7 @@
   "dependencies": {
     "bottleneck": "^2.19.5",
     "cookie": "^2.0.2",
-    "deepmerge": "^4.2.2",
+    "deepmerge-ts": "^8.0.2",
     "dotenv": "^18.0.9",
     "express-ws": "^5.0.2",
     "human-readable-ids": "^1.0.4",

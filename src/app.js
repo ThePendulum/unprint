@@ -9,7 +9,7 @@ import * as cookie from 'cookie';
 import { parseSetCookie } from 'set-cookie-parser';
 import Bottleneck from 'bottleneck';
 import moment from 'moment-timezone';
-import merge from 'deepmerge';
+import { deepmerge, deepmergeCustom } from 'deepmerge-ts';
 import hashObject from 'object-hash';
 import { parseSrcset } from 'srcset';
 
@@ -43,10 +43,10 @@ let globalOptions = {
 };
 
 const events = new EventEmitter();
-const arrayMerge = (_destinationArray, sourceArray) => sourceArray;
+const mergeReplaceArrays = deepmergeCustom({ mergeArrays: false }); // configured arrays replace previous ones instead of being concatenated
 
 function configure(newOptions) {
-	globalOptions = merge(globalOptions, newOptions, { arrayMerge });
+	globalOptions = mergeReplaceArrays(globalOptions, newOptions);
 }
 
 function handleError(error, code) {
@@ -1401,13 +1401,13 @@ function useRemoteRequest(options) {
 }
 
 async function browserRequest(url, customOptions = {}) {
-	const options = merge.all([{
+	const options = deepmerge({
 		timeout: 60000,
 		extract: true,
 		client: 'main',
 		limiter: 'browser',
 		url,
-	}, globalOptions, customOptions]);
+	}, globalOptions, customOptions);
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 	const useProxy = isProxied(options, url);
@@ -1603,8 +1603,7 @@ async function streamResponse(res, status, url, options, feedbackBase, customOpt
 				? Readable.fromWeb(res.body)
 				: res.body;
 
-			// streams are taken from the custom options, deepmerge would clone them into plain objects
-			await pipeline(body, ...(customOptions.transforms || []), customOptions.destination);
+			await pipeline(body, ...(options.transforms || []), options.destination);
 
 			events.emit('requestSuccess', {
 				...feedbackBase,
@@ -1655,7 +1654,7 @@ async function streamResponse(res, status, url, options, feedbackBase, customOpt
 }
 
 async function request(url, customOptions = {}, redirects = 0) {
-	const options = merge.all([{
+	const options = deepmerge({
 		method: 'get',
 		body: null,
 		interface: 'fetch', // fetch or request
@@ -1664,7 +1663,7 @@ async function request(url, customOptions = {}, redirects = 0) {
 		followRedirects: true,
 		maxRedirects: 3,
 		url,
-	}, globalOptions, customOptions]);
+	}, globalOptions, customOptions);
 
 	const method = options.method.toUpperCase(); // uppercase required by undici
 	const body = options.body;
@@ -1712,7 +1711,7 @@ async function request(url, customOptions = {}, redirects = 0) {
 		body: curatedBody.body,
 		headers,
 		redirect: options.followRedirects ? 'follow' : 'manual',
-		signal: customOptions.abortSignal, // deepmerge would clone the signal into a plain object
+		signal: options.abortSignal,
 	})).catch((error) => { // tends to happen when proxy can't reach host
 		const message = error.cause?.cause?.message || error.cause?.message || error.message || 'Request aborted';
 
@@ -1745,7 +1744,7 @@ async function request(url, customOptions = {}, redirects = 0) {
 		return request(newUrl, customOptions, redirects + 1);
 	}
 
-	if (customOptions.destination) {
+	if (options.destination) {
 		return streamResponse(res, status, url, options, feedbackBase, customOptions);
 	}
 
