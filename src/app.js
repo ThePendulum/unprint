@@ -1,6 +1,8 @@
 import { JSDOM, VirtualConsole } from 'jsdom';
 import { chromium } from 'patchright';
 import EventEmitter from 'node:events';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import * as undici from 'undici';
 import qs from 'node:querystring';
 import * as cookie from 'cookie';
@@ -1340,37 +1342,50 @@ async function closeBrowser(client, options = {}) {
 	return false;
 }
 
-function getAgent(options, url) {
+function isProxied(options, url) {
 	const { hostname } = new URL(url);
 
-	if (options.proxy
+	return !!(options.proxy
 		&& options.proxy.enable !== false
 		&& (options.useProxy // defined locally
 		|| options.proxy.use // defined globally
-		|| options.proxy.hostnames?.includes(hostname))
-	) {
-		return new undici.ProxyAgent(`http://${options.proxy.host}:${options.proxy.port}/`, {
-			bodyTimeout: options.timeout,
-			interceptors: { // only applies to fetch
-				Agent: [
-					undici.interceptors.redirect({
-						maxRedirection: options.followRedirects ? options.maxRedirects : 0,
-					}),
-				],
-			},
-		});
+		|| options.proxy.hostnames?.includes(hostname)));
+}
+
+const agents = new Map();
+
+function getAgent(options, url) {
+	// reuse agents to keep connections alive, only options that configure the agent itself go in the key, headers, cookies etc. are set per request
+	const agentOptions = {
+		proxy: isProxied(options, url) ? `http://${options.proxy.host}:${options.proxy.port}/` : null,
+		timeout: options.timeout,
+		tls: options.tls || null,
+	};
+
+	const agentKey = hashObject(agentOptions);
+
+	if (!agents.has(agentKey)) {
+		agents.set(agentKey, agentOptions.proxy
+			? new undici.ProxyAgent({
+				uri: agentOptions.proxy,
+				bodyTimeout: agentOptions.timeout,
+				...(agentOptions.tls && { requestTls: agentOptions.tls }),
+			})
+			: new undici.Agent({
+				bodyTimeout: agentOptions.timeout,
+				...(agentOptions.tls && { connect: agentOptions.tls }),
+			}));
 	}
 
-	return new undici.Agent({
-		bodyTimeout: options.timeout,
-		interceptors: { // only applies to fetch
-			Agent: [
-				undici.interceptors.redirect({
-					maxRedirection: options.followRedirects ? options.maxRedirects : 0,
-				}),
-			],
-		},
-	});
+	return agents.get(agentKey);
+}
+
+async function closeAgents() {
+	const closingAgents = Array.from(agents.values());
+
+	agents.clear();
+
+	await Promise.all(closingAgents.map(async (agent) => agent.close()));
 }
 
 function useRemoteRequest(options) {
@@ -1395,8 +1410,7 @@ async function browserRequest(url, customOptions = {}) {
 	}, globalOptions, customOptions]);
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
-	const agent = getAgent(options, url);
-	const useProxy = agent instanceof undici.ProxyAgent;
+	const useProxy = isProxied(options, url);
 	const useRemote = useRemoteRequest(options);
 
 	const feedbackBase = {
@@ -1404,7 +1418,7 @@ async function browserRequest(url, customOptions = {}) {
 		method: 'get',
 		interval,
 		concurrency,
-		isProxied: agent instanceof undici.ProxyAgent,
+		isProxied: useProxy,
 		isBrowser: true,
 		isRemote: useRemote,
 		options,
@@ -1572,6 +1586,74 @@ function curateRequestBody(body, options) {
 	return { body };
 }
 
+async function streamResponse(res, status, url, options, feedbackBase, customOptions) {
+	// pipe raw body to destination without buffering or decoding it, e.g. for binary media
+	const base = {
+		status,
+		statusText: res.statusText,
+		headers: res.headers,
+		cookies: curateCookies(res, customOptions),
+		response: res,
+		res,
+	};
+
+	if (status >= 200 && status < 300) {
+		try {
+			const body = options.interface === 'fetch'
+				? Readable.fromWeb(res.body)
+				: res.body;
+
+			// streams are taken from the custom options, deepmerge would clone them into plain objects
+			await pipeline(body, ...(customOptions.transforms || []), customOptions.destination);
+
+			events.emit('requestSuccess', {
+				...feedbackBase,
+				status,
+				statusText: res.statusText,
+			});
+
+			return {
+				...base,
+				ok: true,
+			};
+		} catch (error) {
+			handleError(new Error(`Failed to stream response from ${url}: ${error.message}`), 'HTTP_STREAM_FAILED');
+
+			events.emit('requestError', {
+				...feedbackBase,
+				status,
+				statusText: error.message,
+			});
+
+			return {
+				...base,
+				ok: false,
+				statusText: error.message,
+			};
+		}
+	}
+
+	// discard error body to free up the connection, destination is left to the caller
+	if (options.interface === 'fetch') {
+		await res.body?.cancel();
+	} else {
+		await res.body?.dump();
+	}
+
+	handleError(new Error(`HTTP response from ${url} not OK (${status} ${res.statusText})`), 'HTTP_NOT_OK');
+
+	events.emit('requestError', {
+		...feedbackBase,
+		status,
+		statusText: res.statusText,
+	});
+
+	return {
+		...base,
+		ok: false,
+	};
+}
+
 async function request(url, customOptions = {}, redirects = 0) {
 	const options = merge.all([{
 		method: 'get',
@@ -1630,12 +1712,22 @@ async function request(url, customOptions = {}, redirects = 0) {
 		body: curatedBody.body,
 		headers,
 		redirect: options.followRedirects ? 'follow' : 'manual',
-		signal: options.abortSignal,
-	})).catch((error) => ({ // tends to happen when proxy can't reach host
-		status: 500,
-		statusText: 'Request aborted',
-		async text() { return error.cause?.cause?.message || 'Request aborted'; },
-	}));
+		signal: customOptions.abortSignal, // deepmerge would clone the signal into a plain object
+	})).catch((error) => { // tends to happen when proxy can't reach host
+		const message = error.cause?.cause?.message || error.cause?.message || error.message || 'Request aborted';
+
+		// mimic both fetch and request interface responses
+		return {
+			status: 500,
+			statusText: 'Request aborted',
+			async text() { return message; },
+			body: {
+				async text() { return message; },
+				async dump() { return null; },
+				async cancel() { return null; },
+			},
+		};
+	});
 
 	const status = res.statusCode || res.status;
 
@@ -1648,7 +1740,13 @@ async function request(url, customOptions = {}, redirects = 0) {
 	) {
 		const newUrl = new URL(res.headers.location, url).toString();
 
+		await res.body.dump(); // free up the connection for reuse
+
 		return request(newUrl, customOptions, redirects + 1);
+	}
+
+	if (customOptions.destination) {
+		return streamResponse(res, status, url, options, feedbackBase, customOptions);
 	}
 
 	const data = options.interface === 'fetch'
@@ -1719,6 +1817,7 @@ const unprint = {
 	browser: browserRequest,
 	closeBrowser,
 	closeAllBrowsers,
+	closeAgents,
 	getAllBrowsers,
 	getBrowserInstance,
 	initialize: init,

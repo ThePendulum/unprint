@@ -239,6 +239,13 @@ Options
 * `apiUserAgent`: The default user agent header for raw requests (`get` interface `request`)
 * `useBrowser`: Forward the call to `unprint.browser()` (see below), only for GET-requests
 * `fullCookies`: Return cookie metadata in `res.cookies`, instead of just values
+* `tls`: TLS connection options for the target host, e.g. `{ rejectUnauthorized: false }`
+* `abortSignal`: `AbortSignal` to cancel the request
+* `destination`: Writable stream to pipe the raw response body to, e.g. for binary files, instead of reading it as text. The response then has no `data`/`body`. On a non-OK status the body is discarded and the destination is left untouched, the caller is responsible for closing it.
+* `transforms`: Array of transform streams to pipe the response body through before it reaches `destination`, e.g. to hash or measure it
+
+Connections are kept alive and reused between requests that share the same proxy, `timeout` and `tls` options.
+* `unprint.closeAgents()`: Close kept-alive connections, e.g. to let the process exit immediately when done.
 
 Use Playwright with Chromium (experimental)
 * `unprint.browser(url, [options])`
