@@ -1255,6 +1255,7 @@ async function getBrowserInstance(scope, options, useProxy = false, useRemote = 
 			headers: {
 				'unprint-key': options.remote.key,
 			},
+			timeout: options.timeout, // without a timeout, a handshake the remote never answers (e.g. mismatched patchright versions) hangs forever
 		})
 		: chromium.launch({
 			headless: true,
