@@ -199,10 +199,14 @@ async function curlRequest(url, {
 	timeout,
 	tls,
 	signal,
-	curlPath = 'curl',
-	curlArgs = [],
+	curlPath: customCurlPath,
+	curlArgs: customCurlArgs,
 } = {}) {
 	signal?.throwIfAborted();
+
+	// null or empty from host configuration falls back to the defaults
+	const curlPath = customCurlPath || 'curl';
+	const curlArgs = customCurlArgs || [];
 
 	const tempFiles = await createTempFiles();
 	const isHead = method === 'HEAD';
