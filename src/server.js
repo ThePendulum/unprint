@@ -204,6 +204,8 @@ async function initServer() {
 			queue = [];
 
 			browserSocket.on('message', (message) => {
+				logger.debug(`Browser data: ${String(message).slice(0, 500)}`, clientId);
+
 				if (clientSocket.readyState === WebSocket.OPEN) {
 					clientSocket.send(message);
 				}
@@ -215,7 +217,7 @@ async function initServer() {
 
 			currentClient.active -= 1;
 
-			logger.info('Client disconnected', clientId);
+			logger.info(`Client disconnected (${code}${reason?.length ? `: ${reason}` : ''})`, clientId);
 
 			if (currentClient.isRetired && currentClient.active === 0) {
 				await currentClient.browser.close();
@@ -225,7 +227,7 @@ async function initServer() {
 
 		browserSocket.on('close', (code, reason) => {
 			closeSocket(clientSocket, code, reason);
-			logger.debug('Browser disconnected');
+			logger.info(`Browser disconnected (${code}${reason?.length ? `: ${reason}` : ''})`, clientId);
 		});
 
 		clientSocket.on('error', (error) => logger.error(`Client error: ${error}`));

@@ -237,7 +237,7 @@ Options
 * `browserUserAgent`: The default user agent header for browser requests, defaults to installed browser
 * `fetchUserAgent`: The default user agent header for browser-like requests (`get` interface `fetch`)
 * `apiUserAgent`: The default user agent header for raw requests (`get` interface `request`)
-* `useBrowser`: Forward the call to `unprint.browser()` (see below), only for GET-requests
+* `useBrowser`: Forward the call to `unprint.browser()` (see below), keeping the method and body
 * `fullCookies`: Return cookie metadata in `res.cookies`, instead of just values
 * `tls`: TLS connection options for the target host, e.g. `{ rejectUnauthorized: false }`
 * `abortSignal`: `AbortSignal` to cancel the request
@@ -249,9 +249,11 @@ Connections are kept alive and reused between requests that share the same proxy
 
 Use Playwright with Chromium (experimental)
 * `unprint.browser(url, [options])`
+* `unprint.browserPost(url, body, [options])`: POST from the browser context, encoding the body like `unprint.post()`. Requests other than GET use Playwright's request API instead of navigating a page, sharing the context's cookies, user agent, headers and proxy. `control` and `page` don't apply.
 * `unprint.closeAllBrowsers()`: Close reused browser instances.
 
 Additional options
+* `method`, `body`: Request method and body like `unprint.request()`, e.g. `unprint.browser(url, { method: 'post', body })`, same as `unprint.browserPost()`
 * `control`: Async function to interface with Playwright page passed as argument
 * `clientScope`: Browser instance to (re)use, set to `null` to force new scope every request, default `main`.
 * `clientRetirement`: Number of requests until a browser gets restarted for resource clean-up, default `20`.
@@ -262,7 +264,7 @@ Additional options
 
 This requires you to install the Chromium executable:
 * `sudo npx patchright install-deps`
-* `npx patchright install`
+* `npx patchright install chromium`
 
 Returns
 ```javascript

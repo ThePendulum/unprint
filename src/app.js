@@ -1401,6 +1401,120 @@ function useRemoteRequest(options) {
 	return false;
 }
 
+function curateRequestBody(body, options) {
+	if (!body) {
+		return { body };
+	}
+
+	if (typeof body === 'object') {
+		if (options.form) {
+			return {
+				body: qs.stringify(body),
+				headers: {
+					'content-type': 'application/x-www-form-urlencoded',
+				},
+			};
+		}
+
+		return {
+			body: JSON.stringify(body),
+			headers: {
+				'content-type': 'application/json',
+			},
+		};
+	}
+
+	return { body };
+}
+
+// requests other than GET can't be made by navigating a page, use the browser context's request API instead
+// it shares the context's cookies, user agent, headers and proxy, but returns the raw response rather than a rendered page
+async function fetchFromBrowserContext(context, url, method, options) {
+	const curatedBody = curateRequestBody(options.body, options);
+
+	const res = await context.request.fetch(url, {
+		method: method.toUpperCase(),
+		data: curatedBody.body ?? undefined,
+		headers: curateHeaders({
+			...curatedBody.headers,
+			...options.headers,
+		}, options),
+		timeout: options.timeout,
+		maxRedirects: options.followRedirects === false ? 0 : (options.maxRedirects ?? 3),
+	}).catch((error) => error);
+
+	if (res instanceof Error) {
+		return { error: res };
+	}
+
+	return {
+		res,
+		status: res.status(),
+		statusText: res.statusText(),
+		headers: res.headers(),
+		data: await res.text().catch(() => null), // read before the context closes, which disposes the response
+	};
+}
+
+function curateBrowserContextResponse(result, url, { options, customOptions, feedbackBase }) {
+	if (result.error) {
+		handleError(result.error, 'HTTP_BROWSER_REQUEST_FAILED');
+
+		events.emit('requestError', {
+			...feedbackBase,
+			status: null,
+			statusText: result.error.message.split('\n')[0], // playwright appends a multi-line call log
+		});
+
+		return {
+			ok: false,
+			status: null,
+			statusText: result.error.message.split('\n')[0],
+		};
+	}
+
+	const {
+		res,
+		status,
+		statusText,
+		headers,
+		data,
+	} = result;
+
+	if (!(status >= 200 && status < 300)) {
+		handleError(new Error(`HTTP response from ${url} not OK (${status} ${statusText})`), 'HTTP_NOT_OK');
+
+		events.emit('requestError', {
+			...feedbackBase,
+			status,
+			statusText,
+		});
+
+		return curateResponse({
+			ok: false,
+			status,
+			statusText,
+			headers,
+			cookies: curateCookies({ headers }, customOptions),
+			response: res,
+			res,
+		}, data, options, { url, customOptions });
+	}
+
+	events.emit('requestSuccess', {
+		...feedbackBase,
+		status,
+		statusText,
+	});
+
+	return curateResponse({
+		status,
+		statusText,
+		headers,
+		response: res,
+	}, data, options, { url, customOptions });
+}
+
 async function browserRequest(url, customOptions = {}) {
 	const options = deepmerge({
 		timeout: 60000,
@@ -1410,13 +1524,16 @@ async function browserRequest(url, customOptions = {}) {
 		url,
 	}, globalOptions, customOptions);
 
+	// 'browser' is the method alias for browser requests in unprint.request(), which navigates with GET
+	const method = (!options.method || options.method === 'browser' ? 'get' : options.method).toLowerCase();
+
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 	const useProxy = isProxied(options, url);
 	const useRemote = useRemoteRequest(options);
 
 	const feedbackBase = {
 		url,
-		method: 'get',
+		method,
 		interval,
 		concurrency,
 		isProxied: useProxy,
@@ -1448,6 +1565,18 @@ async function browserRequest(url, customOptions = {}) {
 		client.active += 1;
 
 		const context = await getBrowserContext(client.browser, options, useProxy);
+
+		if (method !== 'get') {
+			const result = await fetchFromBrowserContext(context, url, method, options);
+
+			client.active -= 1;
+
+			await context.close();
+			await closeBrowser(client, options);
+
+			return curateBrowserContextResponse(result, url, { options, customOptions, feedbackBase });
+		}
+
 		const page = await context.newPage();
 
 		const res = await page.goto(url, {
@@ -1455,8 +1584,18 @@ async function browserRequest(url, customOptions = {}) {
 		}).catch((error) => error);
 
 		if (res instanceof Error) {
-			await context.close();
+			handleError(res, 'HTTP_BROWSER_REQUEST_FAILED');
+
+			events.emit('requestError', {
+				...feedbackBase,
+				status: null,
+				statusText: res.message.split('\n')[0], // playwright appends a multi-line call log
+			});
+
+			client.active -= 1;
+
 			await page.close();
+			await context.close();
 			await closeBrowser(client, options);
 
 			return {
@@ -1559,32 +1698,6 @@ async function browserRequest(url, customOptions = {}) {
 			control,
 		});
 	});
-}
-
-function curateRequestBody(body, options) {
-	if (!body) {
-		return { body };
-	}
-
-	if (typeof body === 'object') {
-		if (options.form) {
-			return {
-				body: qs.stringify(body),
-				headers: {
-					'content-type': 'application/x-www-form-urlencoded',
-				},
-			};
-		}
-
-		return {
-			body: JSON.stringify(body),
-			headers: {
-				'content-type': 'application/json',
-			},
-		};
-	}
-
-	return { body };
 }
 
 async function streamResponse(res, status, url, options, feedbackBase, customOptions) {
@@ -1797,6 +1910,14 @@ async function post(url, body, options) {
 	});
 }
 
+async function browserPost(url, body, options) {
+	return browserRequest(url, {
+		...options,
+		method: 'post',
+		body,
+	});
+}
+
 function on(trigger, fn) {
 	events.on(trigger, fn);
 }
@@ -1815,6 +1936,7 @@ const unprint = {
 	request,
 	browserRequest,
 	browser: browserRequest,
+	browserPost,
 	closeBrowser,
 	closeAllBrowsers,
 	closeAgents,
