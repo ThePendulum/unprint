@@ -231,12 +231,12 @@ Options
 * `body`: POST body, ignored for `get` and `browser` requests
 * `select`: Pre-query and initialize a specific element on the page.
 * `selectAll`: Pre-query and initialize multiple specific element on the page.
-* `interface`: Use undici `fetch` (browser-like, default) or `request` (raw)
+* `interface`: Use undici `fetch` (browser-like, default), `request` (raw), or `curl` (system curl binary, see below)
 * `form`: Encode POST body as urlencoded form rather than JSON
 * `userAgent`: The default user agent header
 * `browserUserAgent`: The default user agent header for browser requests, defaults to installed browser
 * `fetchUserAgent`: The default user agent header for browser-like requests (`get` interface `fetch`)
-* `apiUserAgent`: The default user agent header for raw requests (`get` interface `request`)
+* `apiUserAgent`: The default user agent header for raw requests (`get` interface `request` or `curl`)
 * `useBrowser`: Forward the call to `unprint.browser()` (see below), keeping the method and body
 * `fullCookies`: Return cookie metadata in `res.cookies`, instead of just values
 * `tls`: TLS connection options for the target host, e.g. `{ rejectUnauthorized: false }`
@@ -246,6 +246,24 @@ Options
 
 Connections are kept alive and reused between requests that share the same proxy, `timeout` and `tls` options.
 * `unprint.closeAgents()`: Close kept-alive connections, e.g. to let the process exit immediately when done.
+
+#### curl interface
+With `interface: 'curl'`, the request is made by spawning the `curl` binary instead of undici, for servers or bot protection that reject undici's HTTP/2 or TLS fingerprint (e.g. its pseudo-header order), while the same request works from curl. The response is shaped like the `request` interface's, and redirects, cookies, `select`, `destination` etc. work the same.
+
+Additional options
+* `curlPath`: Path to the curl binary, default `curl`. Can point to a drop-in such as [curl-impersonate](https://github.com/lexiforest/curl-impersonate) to mimic a browser's TLS and HTTP/2 fingerprint.
+* `curlArgs`: Array of extra command-line arguments, e.g. `['--http1.1']` or `['--compressed']`
+
+Requires curl 7.75 or newer. Options, headers and cookies are passed to curl through stdin rather than as arguments, so they don't show up in the process list. A request body is written to a temporary file only readable by the current user, and removed when the request finishes.
+
+Differences from the undici interfaces
+* No connection reuse: every request starts a new curl process and connection.
+* curl sends its default `Accept: */*` header. Remove it with `curlArgs: ['-H', 'Accept:']`. Other curl defaults that undici doesn't send are removed: the curl user agent, the urlencoded `Content-Type` for bodies, and `Expect: 100-continue`.
+* Like `request`, the response body isn't decompressed and no `Accept-Encoding` is sent. Use `curlArgs: ['--compressed']` to have curl negotiate and decompress.
+* `timeout` is applied as curl's connect timeout, and the request is aborted when no data is received for that long, including while waiting for the response headers (undici's body timeout only starts after the headers arrive).
+* `tls` supports `rejectUnauthorized`, `ca`, `cert`, `key`, `passphrase`, `minVersion`, `maxVersion` and `ciphers`; other options make the request fail.
+* `.curlrc` and proxy environment variables are ignored; use unprint's `proxy` options or `curlArgs`.
+* `FormData` request bodies are not supported.
 
 Use Playwright with Chromium (experimental)
 * `unprint.browser(url, [options])`

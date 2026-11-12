@@ -13,6 +13,8 @@ import { deepmerge, deepmergeCustom } from 'deepmerge-ts';
 import hashObject from 'object-hash';
 import { parseSrcset } from 'srcset';
 
+import curlRequest from './curl.js';
+
 const settings = {
 	throwErrors: false,
 	logErrors: true,
@@ -1771,7 +1773,7 @@ async function request(url, customOptions = {}, redirects = 0) {
 	const options = deepmerge({
 		method: 'get',
 		body: null,
-		interface: 'fetch', // fetch or request
+		interface: 'fetch', // fetch, request or curl
 		timeout: 60000,
 		extract: true,
 		followRedirects: true,
@@ -1788,14 +1790,15 @@ async function request(url, customOptions = {}, redirects = 0) {
 
 	const { limiter, interval, concurrency } = getLimiter(url, options);
 
-	const agent = getAgent(options, url);
+	const isCurl = options.interface === 'curl';
+	const agent = isCurl ? null : getAgent(options, url);
 
 	const feedbackBase = {
 		url,
 		method,
 		interval,
 		concurrency,
-		isProxied: agent instanceof undici.ProxyAgent,
+		isProxied: isCurl ? isProxied(options, url) : agent instanceof undici.ProxyAgent,
 		isBrowser: false,
 		isRemote: false,
 		options,
@@ -1819,14 +1822,26 @@ async function request(url, customOptions = {}, redirects = 0) {
 		cookie: curatedCookie,
 	}, options);
 
-	const res = await limiter.schedule(async () => undici[options.interface](url, {
-		dispatcher: agent,
-		method,
-		body: curatedBody.body,
-		headers,
-		redirect: options.followRedirects ? 'follow' : 'manual',
-		signal: options.abortSignal,
-	})).catch((error) => { // tends to happen when proxy can't reach host
+	const res = await limiter.schedule(async () => (isCurl
+		? curlRequest(url, {
+			method,
+			body: curatedBody.body,
+			headers,
+			proxy: isProxied(options, url) ? `http://${options.proxy.host}:${options.proxy.port}/` : null,
+			timeout: options.timeout,
+			tls: options.tls,
+			signal: options.abortSignal,
+			curlPath: options.curlPath,
+			curlArgs: options.curlArgs,
+		})
+		: undici[options.interface](url, {
+			dispatcher: agent,
+			method,
+			body: curatedBody.body,
+			headers,
+			redirect: options.followRedirects ? 'follow' : 'manual',
+			signal: options.abortSignal,
+		}))).catch((error) => { // tends to happen when proxy can't reach host
 		const message = error.cause?.cause?.message || error.cause?.message || error.message || 'Request aborted';
 
 		// mimic both fetch and request interface responses
@@ -1845,7 +1860,7 @@ async function request(url, customOptions = {}, redirects = 0) {
 	const status = res.statusCode || res.status;
 
 	// fetch handles redirects internally, configured by agent/dispatcher, don't follow again
-	if (options.interface === 'request'
+	if ((options.interface === 'request' || isCurl)
 		&& [301, 302, 303, 307, 308].includes(status)
 		&& res.headers.location
 		&& options.followRedirects
